@@ -1890,6 +1890,7 @@ function renderTournaments() {
     }, Infinity);
     var sbdr = minDays > 21 ? '#97C459' : minDays > 7 ? '#FAC775' : '#E8A09A';
     var sclr = minDays > 21 ? '#1A7A4A' : minDays > 7 ? '#A0620A' : '#C0392B';
+    var seriesKey = grp.baseName.replace(/[^a-zA-Z0-9]/g, '-');
 
     var header =
       '<div style="margin-bottom:0;border-radius:10px 10px 0 0;background:linear-gradient(90deg,#0E1C35 0%,#1B2A4A 100%);border:1px solid #2A3A5A;border-bottom:none;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
@@ -1897,7 +1898,7 @@ function renderTournaments() {
         '<span style="font-size:14px;font-weight:800;color:#fff;letter-spacing:.2px">' + grp.baseName + '</span>' +
         '<span style="font-size:10px;font-weight:700;background:#C9A84C;color:#1B2A4A;padding:2px 9px;border-radius:10px;letter-spacing:.3px">' + dayWord + ' series</span>' +
         (dateRange ? '<span style="font-size:11px;color:#A0B0C8;margin-left:4px">' + dateRange + '</span>' : '') +
-        '<span style="margin-left:auto;font-size:10px;color:#6B7A99">' + n + ' tournaments</span>' +
+        '<div id="series-rollup-' + seriesKey + '" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:#6B7A99">&hellip;</div>' +
       '</div>';
     var cards = grp.items.map(function(t) { return renderTournCard(t, true); }).join('');
     return '<div style="margin-bottom:18px">' + header +
@@ -1906,6 +1907,59 @@ function renderTournaments() {
       '</div>' +
     '</div>';
   }).join('');
+
+  // Fire rollup queries for each series group
+  groups.forEach(function(grp) {
+    if (grp.baseName === null || grp.items.length < 2) return;
+    var seriesKey = grp.baseName.replace(/[^a-zA-Z0-9]/g, '-');
+    var ids = grp.items.map(function(t) { return t.id; });
+    var payMap = {};
+    grp.items.forEach(function(t) { payMap[t.id] = parseFloat(t.pay_per_game) || 0; });
+    loadSeriesRollup(seriesKey, ids, payMap);
+  });
+}
+
+function loadSeriesRollup(seriesKey, tournIds, payMap) {
+  var el = document.getElementById('series-rollup-' + seriesKey);
+  if (!el) return;
+  Promise.all([
+    supabase.from('games').select('tournament_id', {count:'exact', head:true}).in('tournament_id', tournIds),
+    supabase.from('claims').select('official_id').eq('status','confirmed').in('tournament_id', tournIds),
+    supabase.from('available_blocks').select('tournament_id,officials_needed,game_count').in('tournament_id', tournIds)
+  ]).then(function(r) {
+    var rollupEl = document.getElementById('series-rollup-' + seriesKey);
+    if (!rollupEl) return;
+    var gamesTotal = r[0].count || 0;
+    var claims = r[1].data || [];
+    var blocks = r[2].data || [];
+
+    var officialSet = {};
+    claims.forEach(function(c) { officialSet[c.official_id] = 1; });
+    var confirmedOfficials = Object.keys(officialSet).length;
+
+    var totalSlots = blocks.reduce(function(s, b) { return s + (parseInt(b.officials_needed) || 0); }, 0);
+    var filledSlots = claims.length;
+    var pct = totalSlots > 0 ? Math.round(filledSlots / totalSlots * 100) : 0;
+
+    var payEst = blocks.reduce(function(s, b) {
+      return s + (parseInt(b.officials_needed) || 0) * (parseInt(b.game_count) || 0) * (payMap[b.tournament_id] || 0);
+    }, 0);
+
+    var dot = '<span style="color:#3A4A6A;margin:0 3px">&middot;</span>';
+    var parts = [];
+    if (gamesTotal > 0) parts.push('<span style="color:#C4D0E3">' + gamesTotal + ' games</span>');
+    if (confirmedOfficials > 0) parts.push('<span style="color:#6EE7A0">' + confirmedOfficials + ' confirmed</span>');
+    if (totalSlots > 0) {
+      var pctColor = pct >= 100 ? '#6EE7A0' : pct >= 50 ? '#FCD34D' : '#FCA5A5';
+      parts.push('<span style="color:' + pctColor + '">' + pct + '% staffed</span>');
+    }
+    if (payEst > 0) parts.push('<span style="color:#C9A84C;font-weight:700">$' + payEst.toLocaleString() + ' est.</span>');
+
+    rollupEl.innerHTML = parts.length ? parts.join(dot) : '<span style="color:#6B7A99">' + tournIds.length + ' tournaments</span>';
+  }).catch(function() {
+    var rollupEl = document.getElementById('series-rollup-' + seriesKey);
+    if (rollupEl) rollupEl.innerHTML = '<span style="color:#6B7A99">' + tournIds.length + ' tournaments</span>';
+  });
 }
 
 function renderTournCard(t, nested) {

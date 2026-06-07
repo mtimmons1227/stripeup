@@ -1626,12 +1626,14 @@ function loadTournamentStats(tid) {
     if (el) el.style.width = Math.min(pct, 100) + '%';
     el = document.getElementById('staffing-summary-' + tid);
     if (el) {
+      var gamesSummary = gamesCount > 0 ? '<span style="color:#1B2A4A;font-weight:700">' + gamesCount + ' games today</span> &nbsp;&middot;&nbsp; ' : '';
       if (totalNeeded > 0) {
-        el.innerHTML = '<span style="color:' + pctColor + ';font-weight:700">' + slotsFilled + ' of ' + totalNeeded + ' slots filled</span>' +
+        el.innerHTML = gamesSummary +
+          '<span style="color:' + pctColor + ';font-weight:700">' + slotsFilled + ' of ' + totalNeeded + ' slots filled</span>' +
           ' &nbsp;&middot;&nbsp; ' + blocksClaimed + ' block' + (blocksClaimed !== 1 ? 's' : '') + ' claimed' +
           ' &nbsp;&middot;&nbsp; ' + rosterCount + ' official' + (rosterCount !== 1 ? 's' : '') + ' on roster';
       } else {
-        el.textContent = 'No blocks generated yet';
+        el.innerHTML = gamesSummary || 'No blocks generated yet';
       }
     }
 

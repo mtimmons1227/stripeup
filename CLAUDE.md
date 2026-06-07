@@ -24,6 +24,16 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 ## 3. Recent Changes Log
 
+### June 7, 2026 (third session)
+- **index.html** — Nav cleanup: removed Scheduler, Master Schedule, Individual Schedules, Sub Agent tabs; nav now has only Tournaments · Officials · Reports
+- **index.html** — Reports tab rebuilt with 4 sections and pill-tab selector: 1099 Payments, Staffing, Official Activity, Payout Summary
+- **index.html** — `run1099Report()`: replaces `runReport()`; uses supabase JS client directly (fixes sbFetch proxy bug); adds "1099 Required" badge for $600+, totals row, Export CSV
+- **index.html** — `runStaffingReport()`: per-tournament slots filled/open/%, color-coded badge (green/amber/red), confirmed official count, Export CSV
+- **index.html** — `runActivityReport()`: per-official view — tournaments worked, total games, estimated pay from confirmed assignments, Export CSV
+- **index.html** — `runPayoutsReport()`: per-tournament estimated payout from confirmed claims × pay_per_game, grand total row, Export CSV
+- **index.html** — `showReport(name)`, `_dlCsv()`, `initReportYearSelector()` updated for new element IDs; `_rptData` replaces `_reportData`
+- **index.html** — "Send reminder" action card now clickable — opens Send Invitations/Reminders dialog
+
 ### June 7, 2026 (second session)
 - **index.html** — `openSendSchedules(tid)`: new function — opens Send Schedules modal, counts confirmed officials via `supabase.from('claims')`, populates body with official count + tournament name/date, enables Send button when count > 0
 - **index.html** — `doSendSchedules()`: new function — POSTs `{tournament_id}` to `/.netlify/functions/send-schedules`, shows result (sent count, skipped test accounts, errors), hides Send button and changes Cancel to Close on success; uses `showToast()` for non-blocking confirmation
@@ -221,12 +231,20 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - Travel radius DB schema in place
 - Multi-official blocks (1/2/3 officials per block)
 
+### Reports
+- **1099 Payments**: supabase client direct, $600+ badge, totals row, Export CSV
+- **Staffing Report**: per-tournament slots filled/open/%, color-coded %, Export CSV
+- **Official Activity**: per-official tournaments + games + est. pay, Export CSV
+- **Payout Summary**: per-tournament est. payout from confirmed games, grand total, Export CSV
+
 ### UI / UX
+- Nav trimmed to 3 tabs: Tournaments · Officials · Reports (Scheduler/Master/Individual/SubAgent removed)
 - Nav bar pills scoped to org's active tournaments — games and confirmed counts clear to 0 when all tournaments deleted
 - `showToast()` helper for non-blocking status feedback
 - show_co_officials toggle working
 - Schedule status badge always visible (inline-block from initial HTML)
 - Mobile optimization on self-schedule.html
+- "Send reminder" action card clickable — opens Send Invitations/Reminders dialog
 
 ---
 
@@ -249,7 +267,6 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 - Travel radius UI fields on Officials roster table
 - Twilio A2P 10DLC upgrade for SMS (~$25 to unblock)
-- Reports tab 1099 Report UI
 - Official-facing 1099 earnings view (Phase 2)
 - Court-level rank override UI
 - Auto-release cron job for expired holds

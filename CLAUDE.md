@@ -24,6 +24,10 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 ## 3. Recent Changes Log
 
+### June 7, 2026 (fourth session)
+- **index.html** — `loadSeriesRollup(seriesKey, tournIds, payMap)`: new function — fires 3 async Supabase queries (games count, confirmed claims, available_blocks) for all tournament IDs in a series; computes total games, distinct confirmed officials, % staffed, and total pay estimate; updates `series-rollup-{key}` div in the series header
+- **index.html** — Series group header now includes `<div id="series-rollup-KEY">` placeholder (shows `…` until data loads); populated by `loadSeriesRollup` after render; shows games · confirmed · % staffed · pay est in gold/green/amber/red coloring
+
 ### June 7, 2026 (third session)
 - **index.html** — Nav cleanup: removed Scheduler, Master Schedule, Individual Schedules, Sub Agent tabs; nav now has only Tournaments · Officials · Reports
 - **index.html** — Reports tab rebuilt with 4 sections and pill-tab selector: 1099 Payments, Staffing, Official Activity, Payout Summary
@@ -178,6 +182,7 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - Delete tournament with typed name confirmation + nav header refreshes immediately
 - Download Template button on each tournament card
 - **Tournament card command center** — days-until badge, 4 metric tiles, court breakdown, countdown circle, pay estimate, dynamic action cards, quick actions row
+- **Series group header rollup** — `loadSeriesRollup()` fires async queries post-render; shows combined games, distinct confirmed officials, % staffed, and total pay estimate across all days in a series
 
 ### Games & Blocks
 - CSV import with real court names (`court_name` or `court` column); M/D/YYYY dates normalized to YYYY-MM-DD

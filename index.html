@@ -4173,7 +4173,7 @@ function run1099Report() {
       btn.textContent = 'Run Report'; btn.disabled = false;
       if (r.error) throw new Error(r.error.message);
       var data = r.data || [];
-      if (!data.length) { status.textContent = 'No results for ' + year + '.'; results.innerHTML = '<div class=”alert alert-info” style=”margin:0”><span>i</span><span>No confirmed taxable payments found for ' + year + '.</span></div>'; return; }
+      if (!data.length) { status.textContent = 'No results for ' + year + '.'; results.innerHTML = '<div style=”color:#6B7A99;font-size:13px;padding:16px 0”>No confirmed taxable payments found for ' + year + '.</div>'; return; }
       _rptData['1099'] = data;
       var totalPay = data.reduce(function(s,r){ return s+parseFloat(r.total_pay||0); },0);
       var totalGames = data.reduce(function(s,r){ return s+(r.total_games||0); },0);
@@ -4192,7 +4192,7 @@ function run1099Report() {
       html += '<tr style=”background:#F0FDF4;font-weight:700”><td colspan=”3” style=”color:#1A7A4A”>TOTAL</td><td style=”text-align:right;color:#1A7A4A”>' + totalGames + '</td><td style=”text-align:right;color:#1A7A4A”>$' + totalPay.toFixed(2) + '</td><td></td></tr></tbody></table>';
       results.innerHTML = html;
     })
-    .catch(function(e) { btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-error” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
+    .catch(function(e) { btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-err” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
 }
 
 function export1099Csv() {
@@ -4234,7 +4234,7 @@ function runStaffingReport() {
         results.innerHTML=html+'</tbody></table>';
       });
     })
-    .catch(function(e){ btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-error” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
+    .catch(function(e){ btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-err” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
 }
 
 function exportStaffingCsv() {
@@ -4277,7 +4277,7 @@ function runActivityReport() {
         results.innerHTML=html+'</tbody></table>';
       });
     })
-    .catch(function(e){ btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-error” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
+    .catch(function(e){ btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-err” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
 }
 
 function exportActivityCsv() {
@@ -4323,7 +4323,7 @@ function runPayoutsReport() {
         results.innerHTML=html;
       });
     })
-    .catch(function(e){ btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-error” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
+    .catch(function(e){ btn.textContent='Run Report'; btn.disabled=false; status.textContent='Error: '+e.message; results.innerHTML='<div class=”alert alert-err” style=”margin:0”><span>!</span><span>'+e.message+'</span></div>'; });
 }
 
 function exportPayoutsCsv() {
@@ -6225,4 +6225,5 @@ function changePassword(){
 </script>
 </body>
 </html>
+
 

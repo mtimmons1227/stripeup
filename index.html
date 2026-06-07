@@ -1773,7 +1773,7 @@ function loadTournamentStats(tid) {
       }
 
       if (slotsOpen > 0 && invitesSent) {
-        cards.push({color:'#C0392B',bg:'#FDECEA',bdr:'#E8A09A',icon:'📬',msg:'Send reminder — ' + slotsOpen + ' slot' + (slotsOpen!==1?'s':'') + ' unclaimed'});
+        cards.push({color:'#C0392B',bg:'#FDECEA',bdr:'#E8A09A',icon:'📬',msg:'Send reminder — ' + slotsOpen + ' slot' + (slotsOpen!==1?'s':'') + ' unclaimed',onclick:'openInviteModal(\'' + tid + '\')'});
       }
 
       if (pct >= 100) {
@@ -1783,7 +1783,9 @@ function loadTournamentStats(tid) {
       }
 
       el.innerHTML = cards.map(function(c) {
-        return '<div style="background:'+c.bg+';border:1px solid '+c.bdr+';border-radius:8px;padding:8px 10px;display:flex;align-items:flex-start;gap:7px;font-size:12px;color:'+c.color+';margin-bottom:6px;font-weight:600">' +
+        var clickable = c.onclick ? 'cursor:pointer;' : '';
+        var handler   = c.onclick ? ' onclick="'+c.onclick+'" role="button" tabindex="0"' : '';
+        return '<div'+handler+' style="background:'+c.bg+';border:1px solid '+c.bdr+';border-radius:8px;padding:8px 10px;display:flex;align-items:flex-start;gap:7px;font-size:12px;color:'+c.color+';margin-bottom:6px;font-weight:600;'+clickable+'">' +
           '<span style="flex-shrink:0">'+c.icon+'</span><span>'+c.msg+'</span></div>';
       }).join('') || '<div style="font-size:11px;color:#6B7A99;font-style:italic">—</div>';
     }

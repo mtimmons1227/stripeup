@@ -6,7 +6,7 @@ This file is the single source of truth. Read it first. Update it last.
 
 ## 1. Current Status
 
-**As of April 11, 2026** — Self-schedule flow is fully built end-to-end with availability windows, official status badges, and decline tracking. The assigner dashboard has a full invitation lifecycle: Send Invitations → Send Reminders dialog (if already sent) → Demo Mode (no real emails) → Simulate Responses. Layout lock enforces block editing restrictions after invitations sent. Header nav stats are now scoped correctly to active tournaments. Recipient count in Send Invitations modal matches actual send count (excludes already-confirmed and recently-invited officials).
+**As of June 7, 2026** — CSV game import now filters rows by tournament date, so a multi-day CSV file will only load the games matching the specific tournament's date. A combined 2-day PSA Summer Jam schedule CSV (July 4-5, 2026, 5 courts, 11 slots/day) has been generated in game-exports/. GitHub repo migrated to mtimmons1227/stripeup; Netlify reconnected. DNS issue with AT&T ISP resolved via Google Public DNS in Chrome/Edge. Signup auth bug fixed (was routing through proxy instead of Supabase JS client directly).
 
 The next milestone is a full browser test of the self-schedule flow from invite link to confirmed games, and adding travel radius UI fields to the Officials roster table.
 
@@ -23,6 +23,10 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 ---
 
 ## 3. Recent Changes Log
+
+### June 7, 2026
+- **index.html** — `doLoad()`: added date filtering for CSV game import — after CSV is parsed, rows are filtered to only those matching the tournament's date (`G.allTournaments.find(t => t.id === G_IMPORT_TOURN_ID).date`); shows alert if no rows match; summary line now includes the tournament date; supports multi-day CSV files loaded against individual day tournaments
+- **game-exports/psa-summer-jam-2026-both-days.csv** — New combined 2-day schedule CSV: PSA Summer Jam July 4-5 2026, 5 courts (Court 1–5), 11 time slots per day (08:00–19:40 at 70-min intervals), 110 total games
 
 ### April 11, 2026 (fifth session)
 - **index.html** — Multi-day tournament creation: added "Number of Days" selector (1–4) to New Tournament modal; days > 1 shows helper text and renames button to "Create N Tournaments"; `createTournament()` loops each day, offsets date using local midnight (no UTC shift), appends day-of-week suffix (e.g. "Summer Jam Friday"), inserts sequentially; on completion shows dismissible green success banner above the list with clickable tournament name links; `addDays()`, `tnDaysChange()`, `showMultiCreateBanner()` helpers added; existing series-grouping feature auto-groups the new day-named tournaments

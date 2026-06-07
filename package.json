@@ -1,0 +1,16 @@
+{
+  "name": "stripeup-functions",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "twilio": "^5.0.0",
+    "resend": "^3.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Register as an Official   StripeUp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#F4F6F9;color:#1B2A4A;font-size:14px}
+.hdr{background:#0E1C35;padding:14px 20px;border-bottom:3px solid #C9A84C;margin-bottom:0}
+.hdr-title{font-size:22px;font-weight:700;color:#fff}.hdr-title span{color:#C9A84C}
+.zebra-stripes{display:inline-block;background:repeating-linear-gradient(135deg,#fff,#fff 3px,#C9A84C 3px,#C9A84C 6px);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900}
+.zebra-dark{display:inline-block;background:repeating-linear-gradient(135deg,#1B2A4A,#1B2A4A 3px,#C9A84C 3px,#C9A84C 6px);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:900}
+.hdr-sub{font-size:12px;color:#8A9BB8;margin-top:3px}
+.hero{background:linear-gradient(135deg,#0E1C35,#1B2A4A);padding:32px 20px;text-align:center;margin-bottom:28px}
+.hero-title{font-size:26px;font-weight:700;color:#fff;margin-bottom:8px}
+.hero-title span{color:#C9A84C}
+.hero-sub{font-size:14px;color:#8A9BB8;margin-bottom:20px;line-height:1.6}
+.hero-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.pill{font-size:12px;padding:5px 14px;border-radius:20px;background:rgba(201,168,76,.15);color:#C9A84C;border:1px solid rgba(201,168,76,.3)}
+.wrap{max-width:540px;margin:0 auto;padding:0 16px 48px}
+.card{background:#fff;border-radius:12px;border:1px solid #D1D9E6;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:16px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;color:#1B2A4A}
+.form-lbl{font-size:11px;font-weight:700;color:#6B7A99;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.form-row{margin-bottom:14px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #D1D9E6;border-radius:7px;font-family:inherit;font-size:13px;color:#1B2A4A;background:#F4F6F9}
+input:focus,select:focus{outline:none;border-color:#C9A84C;background:#fff}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.g2{grid-template-columns:1fr}}
+.sports-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sport-chk{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid #D1D9E6;border-radius:7px;cursor:pointer;background:#F4F6F9;transition:all .15s}
+.sport-chk:has(input:checked){background:#E8EEF8;border-color:#1B2A4A}
+.sport-chk input{width:16px;height:16px;cursor:pointer}
+.sport-chk label{font-size:13px;cursor:pointer;color:#1B2A4A}
+.btn{display:block;width:100%;padding:13px;background:#C9A84C;color:#0E1C35;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;font-family:inherit}
+.btn:hover{background:#b8962e}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.err{color:#C0392B;font-size:12px;margin-top:8px;padding:10px 12px;background:#FDECEA;border-radius:6px;display:none}
+.helper{font-size:11px;color:#6B7A99;margin-top:4px}
+.success{background:#fff;border-radius:12px;padding:40px 24px;text-align:center;display:none;box-shadow:0 2px 8px rgba(0,0,0,.06);border:1px solid #D1D9E6}
+.check{width:60px;height:60px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
+.steps{background:#0E1C35;border-radius:10px;padding:16px 20px;margin-top:20px;text-align:left}
+.step{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.step:last-child{margin-bottom:0}
+.step-num{width:22px;height:22px;border-radius:50%;background:#C9A84C;color:#0E1C35;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:12px;color:#8A9BB8;line-height:1.5}
+.step-text b{color:#C9A84C}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title"><span class="zebra-stripes">Stripe</span><span style="color:#C9A84C;font-weight:900">Up</span></div>
+  <div class="hdr-sub">The platform for sports officials</div>
+</div>
+
+<div class="hero">
+  <div class="hero-title">Join <span class="zebra-stripes" style="font-size:26px">Stripe</span><span style="color:#C9A84C;font-weight:900">Up</span></div>
+  <div class="hero-sub">Register once. Work with any assigner.<br/>Your schedule, earnings, and assignments   all in one place.</div>
+  <div class="hero-pills">
+    <div class="pill">Free forever</div>
+    <div class="pill">All sports</div>
+    <div class="pill">DFW & beyond</div>
+    <div class="pill">Takes 2 minutes</div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div id="reg-form">
+    <div class="card">
+      <div class="card-title">Your Information</div>
+      <div class="g2">
+        <div class="form-row">
+          <label class="form-lbl">First Name *</label>
+          <input type="text" id="r-first" placeholder="James"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Last Name *</label>
+          <input type="text" id="r-last" placeholder="Brown"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Email Address *</label>
+        <input type="email" id="r-email" placeholder="jbrown@email.com"/>
+        <div class="helper">This is your unique identity on StripeUp</div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Phone Number</label>
+        <input type="tel" id="r-phone" placeholder="214-555-0101"/>
+      </div>
+      <div class="g2">
+        <div class="form-row">
+          <label class="form-lbl">City</label>
+          <input type="text" id="r-city" placeholder="Dallas"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Market</label>
+          <select id="r-market">
+            <option value="DFW">DFW   Dallas/Fort Worth</option>
+            <option value="Houston">Houston</option>
+            <option value="San Antonio">San Antonio</option>
+            <option value="Austin">Austin</option>
+            <option value="Other Texas">Other Texas</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sports You Officiate</div>
+      <div class="sports-grid">
+        <div class="sport-chk"><input type="checkbox" id="sp-bball" value="basketball" checked/><label for="sp-bball">Basketball</label></div>
+        <div class="sport-chk"><input type="checkbox" id="sp-vball" value="volleyball"/><label for="sp-vball">Volleyball</label></div>
+        <div class="sport-chk"><input type="checkbox" id="sp-base" value="baseball"/><label for="sp-base">Baseball / Softball</label></div>
+        <div class="sport-chk"><input type="checkbox" id="sp-foot" value="football"/><label for="sp-foot">Flag Football</label></div>
+        <div class="sport-chk"><input type="checkbox" id="sp-soccer" value="soccer"/><label for="sp-soccer">Soccer</label></div>
+        <div class="sport-chk"><input type="checkbox" id="sp-other" value="other"/><label for="sp-other">Other</label></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Certification & Experience</div>
+      <div class="form-row">
+        <label class="form-lbl">Certification Level</label>
+        <select id="r-cert">
+          <option value="">Not Certified</option>
+          <option value="Recreational">Recreational</option>
+          <option value="Middle School">Middle School</option>
+          <option value="JV">JV / Junior Varsity</option>
+          <option value="Varsity">Varsity</option>
+          <option value="College">College</option>
+          <option value="Professional">Professional</option>
+        </select>
+      <div class="form-row" style="display:flex;align-items:center;gap:10px;padding:8px 0 0 0">
+        <input type="checkbox" id="r-three-person" style="width:18px;height:18px;cursor:pointer;flex-shrink:0"/>
+        <div>
+          <label for="r-three-person" style="font-size:13px;font-weight:700;cursor:pointer;color:#1B2A4A">3-Person Crew Certified</label>
+          <div style="font-size:11px;color:#6B7A99;margin-top:2px">I am certified to work as part of a 3-person officiating crew</div>
+        </div>
+      </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Years of Experience</label>
+        <select id="r-exp">
+          <option value="0-1">Less than 1 year</option>
+          <option value="1-3">1-3 years</option>
+          <option value="3-5">3-5 years</option>
+          <option value="5-10">5-10 years</option>
+          <option value="10+">10+ years</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Highest Level Officiated</label>
+        <select id="r-level">
+          <option value="Youth">Youth / Recreation</option>
+          <option value="Middle School">Middle School</option>
+          <option value="JV">JV High School</option>
+          <option value="Varsity">Varsity High School</option>
+          <option value="College">College</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Notes (optional)</label>
+        <textarea id="r-notes" style="height:70px" placeholder="Any additional information about your experience or availability preferences..."></textarea>
+      </div>
+      <div class="err" id="r-err"></div>
+      <button class="btn" id="r-btn" onclick="submitRegistration()">Register as an Official   It's Free</button>
+      <div style="font-size:11px;color:#6B7A99;text-align:center;margin-top:10px">Already registered? Assigners will contact you directly through StripeUp.</div>
+    </div>
+  </div>
+
+  <div class="success" id="reg-success">
+    <div class="check">&#10003;</div>
+    <div style="font-size:22px;font-weight:700;color:#1B2A4A;margin-bottom:8px">You're on StripeUp!</div>
+    <div style="font-size:14px;color:#6B7A99;line-height:1.7;margin-bottom:20px">
+      Your profile has been created. Assigners in your market can now find and invite you to their tournaments.
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">1</div><div class="step-text"><b>Watch your email</b>   Tournament invitations will arrive with game details and pay rate</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><b>Submit availability</b>   Click the link in the invitation to confirm your availability for each tournament</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><b>Get assigned</b>   StripeUp generates your schedule automatically and sends it to you before the tournament</div></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var SUPA_URL = '/.netlify/functions/supabase-proxy';
+
+function getSelectedSports() {
+  var sports = [];
+  ['bball','vball','base','foot','soccer','other'].forEach(function(s) {
+    var el = document.getElementById('sp-' + s);
+    if (el && el.checked) sports.push(el.value);
+  });
+  return sports.join(',') || 'basketball';
+}
+
+var REGISTER_LOCKED = false;
+
+function submitRegistration() {
+  if (REGISTER_LOCKED) return;
+  var first = document.getElementById('r-first').value.trim();
+  var last = document.getElementById('r-last').value.trim();
+  var email = document.getElementById('r-email').value.trim().toLowerCase();
+  var phone = document.getElementById('r-phone').value.trim();
+  var err = document.getElementById('r-err');
+  var btn = document.getElementById('r-btn');
+  err.style.display = 'none';
+
+  if (!first || !last) { err.textContent = 'First and last name are required.'; err.style.display = 'block'; return; }
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) { err.textContent = 'A valid email address is required.'; err.style.display = 'block'; return; }
+  if (phone && !/^\+?[0-9()\s-]{7,20}$/.test(phone)) { err.textContent = 'Enter a valid phone number or leave blank.'; err.style.display = 'block'; return; }
+
+  REGISTER_LOCKED = true;
+  btn.textContent = 'Creating your profile...'; btn.disabled = true;
+
+  var data = {
+    name: first + ' ' + last,
+    email: email,
+    phone: document.getElementById('r-phone').value.trim() || null,
+    sport: getSelectedSports(),
+    sports: getSelectedSports(),
+    certification: document.getElementById('r-cert').value || null,
+    three_person_certified: document.getElementById('r-three-person') ? document.getElementById('r-three-person').checked : false,
+    market: document.getElementById('r-market').value,
+    status: 'active',
+    profile_complete: true,
+    notes: [
+      'Exp: ' + document.getElementById('r-exp').value,
+      'Level: ' + document.getElementById('r-level').value,
+      document.getElementById('r-notes').value.trim()
+    ].filter(Boolean).join(' | ')
+  };
+
+  fetch(SUPA_URL + '/rest/v1/officials', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify(data)
+  }).then(function(r) {
+    if (r.ok || r.status === 201) {
+      document.getElementById('reg-form').style.display = 'none';
+      document.getElementById('reg-success').style.display = 'block';
+      window.scrollTo(0, 0);
+    } else {
+      return r.text().then(function(t) {
+        if (t.includes('23505')) {
+          err.textContent = 'This email is already registered on StripeUp. Assigners can already find you!';
+        } else {
+          err.textContent = 'Registration failed. Please try again. (' + t.slice(0, 80) + ')';
+        }
+        err.style.display = 'block';
+        REGISTER_LOCKED = false;
+        btn.textContent = 'Register as an Official   It\'s Free'; btn.disabled = false;
+      });
+    }
+  }).catch(function(e) {
+    err.textContent = 'Network error: ' + e.message;
+    err.style.display = 'block';
+    REGISTER_LOCKED = false;
+    btn.textContent = 'Register as an Official   It\'s Free'; btn.disabled = false;
+  });
+}
+</script>
+</body>
+</html>

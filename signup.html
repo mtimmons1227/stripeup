@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Submit Availability - StripeUp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#F4F6F9;color:#1B2A4A;font-size:14px;padding:0}
+.hdr{background:#0E1C35;color:#fff;padding:14px 20px;border-bottom:3px solid #C9A84C;margin-bottom:24px}
+.hdr-title{font-size:20px;font-weight:700}.hdr-title span{color:#C9A84C}
+.hdr-sub{font-size:12px;color:#8A9BB8;margin-top:2px}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 40px}
+.card{background:#fff;border-radius:12px;border:1px solid #D1D9E6;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.tourn-banner{background:#E8EEF8;border-radius:8px;padding:14px;margin-bottom:20px;font-family:Arial,sans-serif;font-size:13px;color:#1B2A4A}
+.closed-banner{background:#FDECEA;border:2px solid #C0392B;border-radius:8px;padding:16px;margin-bottom:20px;text-align:center}
+.form-lbl{font-size:11px;font-weight:700;color:#6B7A99;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.form-row{margin-bottom:16px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #D1D9E6;border-radius:7px;font-family:inherit;font-size:13px;color:#1B2A4A;background:#F4F6F9}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;background:#fff}
+.btn{display:block;width:100%;padding:13px;background:#C9A84C;color:#0E1C35;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn:hover{background:#b8962e}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.err{color:#C0392B;font-size:12px;margin-top:8px;padding:8px 12px;background:#FDECEA;border-radius:6px;display:none}
+.success{background:#E8F5EE;border:2px solid #1A7A4A;border-radius:12px;padding:32px 24px;text-align:center;display:none}
+.helper{font-size:11px;color:#6B7A99;margin-top:4px;font-family:monospace}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:480px){.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">Officials <span>Scheduler</span></div>
+  <div class="hdr-sub">Submit Your Availability</div>
+</div>
+
+<div class="wrap">
+  <div id="form-card" class="card">
+    <div class="tourn-banner" id="tourn-info">Loading tournament info...</div>
+
+    <div class="form-row">
+      <label class="form-lbl">Your Full Name *</label>
+      <input type="text" id="sf-name" placeholder="First Last"/>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Email</label>
+      <input type="email" id="sf-email" placeholder="your@email.com"/>
+    </div>
+    <div id="avail-section">
+      <div class="g2">
+        <div class="form-row">
+          <label class="form-lbl">Available From *</label>
+          <input type="text" id="sf-start" value="08:00" placeholder="08:00"/>
+        </div>
+        <div class="form-row">
+          <label class="form-lbl">Available Until *</label>
+          <input type="text" id="sf-end" value="18:00" placeholder="18:00"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Blocked Times (optional)</label>
+        <input type="text" id="sf-blocked" placeholder="e.g. 12:00 or 12:00-13:00 or 12:00;14:00-15:00"/>
+        <div class="helper">Use semicolons to separate multiple blocked periods</div>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Max Games (optional)</label>
+        <select id="sf-max">
+          <option value="">No preference (auto)</option>
+          <option value="2">2 games max</option>
+          <option value="3">3 games max</option>
+          <option value="4">4 games max</option>
+          <option value="5">5 games max</option>
+          <option value="6">6 games max</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Notes (optional)</label>
+      <textarea id="sf-notes" style="height:70px" placeholder="Any other info for the scheduler..."></textarea>
+    </div>
+    <div class="err" id="sf-err"></div>
+    <button class="btn" id="sf-btn" onclick="submitAvailability()">Submit Availability</button>
+  </div>
+
+  <div class="success" id="sf-success">
+    <div style="font-size:48px;margin-bottom:16px">&#10003;</div>
+    <div style="font-size:20px;font-weight:800;margin-bottom:10px;color:#1A7A4A">Submitted!</div>
+    <div style="font-size:14px;color:#6B7A99;line-height:1.7">Your availability has been recorded.<br/>You will receive your game schedule once it is generated.</div>
+  </div>
+</div>
+
+<script>
+var SUPA_URL = '/.netlify/functions/supabase-proxy';
+
+var tournId = null;
+var orgId = null;
+var tournDays = []; // array of {id, day_date, day_number, start_time, end_time}
+var signupCode = new URLSearchParams(window.location.search).get('signup') || new URLSearchParams(window.location.search).get('code');
+
+function sbHeaders() {
+  return { 'Content-Type': 'application/json' };
+}
+
+function isValidTime(t) {
+  return /^([01]?\d|2[0-3]):([0-5]\d)$/.test(t);
+}
+
+function isTimeBefore(start, end) {
+  var a = start.split(':').map(Number);
+  var b = end.split(':').map(Number);
+  return a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
+}
+
+function getDaysBetween(startDate, endDate) {
+  var days = [];
+  var cur = new Date(startDate + 'T00:00:00');
+  var end = new Date(endDate + 'T00:00:00');
+  while (cur <= end) { days.push(cur.toISOString().slice(0, 10)); cur.setDate(cur.getDate() + 1); }
+  return days;
+}
+
+function formatDay(dateStr, num) {
+  var d = new Date(dateStr + 'T00:00:00');
+  var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return 'Day ' + num + ' - ' + days[d.getDay()] + ' ' + months[d.getMonth()] + ' ' + d.getDate();
+}
+
+function loadTournament() {
+  if (!signupCode) {
+    showBannerError('No signup code found. Check your link.');
+    return;
+  }
+  fetch(SUPA_URL + '/rest/v1/tournaments?signup_code=eq.' + encodeURIComponent(signupCode) + '&select=id,name,date,start_date,end_date,location,org_id,pay_per_game,officials_per_game,start_time,end_time,status', {
+    headers: sbHeaders()
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (!data || !data.length) { showBannerError('Tournament not found. Check your link.'); return; }
+    var t = data[0];
+    tournId = t.id;
+    orgId = t.org_id;
+
+    // Check if signup is closed
+    if (t.status === 'closed') {
+      var banner = document.getElementById('tourn-info');
+      banner.innerHTML =
+        '<div style="font-size:16px;font-weight:800;margin-bottom:8px;color:#C0392B">' + t.name + '</div>' +
+        '<div style="font-size:13px;color:#C0392B;margin-bottom:8px">Signup is currently closed for this tournament.</div>' +
+        '<div style="font-size:12px;color:#6B7A99">The assigner has closed availability submissions. If you believe this is an error, please contact the tournament organizer directly.</div>';
+      banner.style.cssText = 'background:#FDECEA;border:2px solid #C0392B;border-radius:8px;padding:16px;margin-bottom:20px';
+      document.getElementById('sf-btn').disabled = true;
+      document.getElementById('sf-btn').textContent = 'Signup Closed';
+      document.getElementById('sf-btn').style.background = '#ccc';
+      document.getElementById('sf-btn').style.cursor = 'not-allowed';
+      return;
+    }
+
+    var startDate = t.start_date || t.date;
+    var endDate = t.end_date || t.date;
+    var days = getDaysBetween(startDate, endDate);
+    var isMultiDay = days.length > 1;
+
+    // Show tournament banner
+    var banner = document.getElementById('tourn-info');
+    var dateLabel = isMultiDay ? startDate + ' to ' + endDate : startDate;
+    banner.innerHTML =
+      '<div style="font-size:17px;font-weight:800;margin-bottom:10px;color:#1B2A4A">' + t.name + '</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px">' +
+      '<div><div style="font-size:10px;color:#6B7A99;text-transform:uppercase;margin-bottom:2px">Date' + (isMultiDay?'s':'') + '</div><b>' + dateLabel + '</b></div>' +
+      '<div><div style="font-size:10px;color:#6B7A99;text-transform:uppercase;margin-bottom:2px">Location</div><b>' + (t.location||'TBD') + '</b></div>' +
+      '<div><div style="font-size:10px;color:#6B7A99;text-transform:uppercase;margin-bottom:2px">Time</div><b>' + (t.start_time||'08:00') + ' - ' + (t.end_time||'19:00') + '</b></div>' +
+      '<div><div style="font-size:10px;color:#6B7A99;text-transform:uppercase;margin-bottom:2px">Pay Per Game</div><b style="color:#1A7A4A;font-size:18px">$' + (t.pay_per_game||'TBD') + '</b></div>' +
+      '</div>';
+    banner.style.cssText = 'background:#E8F5EE;border:2px solid #1A7A4A;border-radius:8px;padding:16px;margin-bottom:20px';
+
+    // Build availability section
+    if (isMultiDay) {
+      buildMultiDayForm(days, t);
+    }
+    // Load tournament_days if they exist for more detail
+    fetch(SUPA_URL + '/rest/v1/tournament_days?tournament_id=eq.' + tournId + '&order=day_number.asc', { headers: sbHeaders() })
+      .then(function(r) { return r.json(); })
+      .then(function(daysData) { if (daysData && daysData.length) tournDays = daysData; });
+  })
+  .catch(function(e) { showBannerError('Error: ' + e.message); });
+}
+
+function showBannerError(msg) {
+  var b = document.getElementById('tourn-info');
+  b.textContent = msg;
+  b.style.cssText = 'background:#FDECEA;border:2px solid #C0392B;border-radius:8px;padding:14px;color:#C0392B;font-weight:700';
+}
+
+function buildMultiDayForm(days, t) {
+  // Replace the single avail form with per-day grid
+  var avContainer = document.getElementById('avail-section');
+  if (!avContainer) return;
+  var html = '<div style="font-size:12px;font-weight:700;color:#6B7A99;text-transform:uppercase;margin-bottom:10px">Your Availability Per Day</div>';
+  html += '<div style="border:1px solid #D1D9E6;border-radius:8px;overflow:hidden">';
+  html += '<div style="display:grid;grid-template-columns:2fr 60px 90px 90px 80px;background:#0E1C35;color:#C9A84C;font-size:10px;font-weight:700;padding:8px 10px;text-transform:uppercase;gap:6px"><div>Day</div><div>Avail</div><div>From</div><div>Until</div><div>Max</div></div>';
+  days.forEach(function(d, i) {
+    var dayNum = i + 1;
+    var label = formatDay(d, dayNum);
+    html += '<div style="display:grid;grid-template-columns:2fr 60px 90px 90px 80px;padding:8px 10px;border-top:1px solid #F4F6F9;align-items:center;gap:6px;background:' + (i%2===0?'#fff':'#F4F6F9') + '">' +
+      '<div style="font-size:12px;font-weight:600">' + label + '</div>' +
+      '<div><input type="checkbox" id="day-avail-' + i + '" checked onchange="toggleDay(' + i + ')" style="width:18px;height:18px;cursor:pointer"/></div>' +
+      '<div><input type="text" id="day-start-' + i + '" value="' + (t.start_time||'08:00') + '" style="width:100%;padding:5px;font-size:12px;border:1px solid #D1D9E6;border-radius:4px"/></div>' +
+      '<div><input type="text" id="day-end-' + i + '" value="' + (t.end_time||'18:00') + '" style="width:100%;padding:5px;font-size:12px;border:1px solid #D1D9E6;border-radius:4px"/></div>' +
+      '<div><select id="day-max-' + i + '" style="width:100%;padding:5px;font-size:11px;border:1px solid #D1D9E6;border-radius:4px">' +
+        '<option value="">Auto</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>' +
+      '</select></div>' +
+      '<input type="hidden" id="day-date-' + i + '" value="' + d + '"/>' +
+    '</div>';
+  });
+  html += '</div>';
+  avContainer.innerHTML = html;
+  avContainer.setAttribute('data-days', days.length);
+}
+
+function toggleDay(i) {
+  var checked = document.getElementById('day-avail-' + i).checked;
+  var start = document.getElementById('day-start-' + i);
+  var end = document.getElementById('day-end-' + i);
+  var max = document.getElementById('day-max-' + i);
+  [start, end, max].forEach(function(el) { if(el) { el.disabled = !checked; el.style.opacity = checked ? '1' : '0.4'; } });
+}
+
+function submitAvailability() {
+  var name = document.getElementById('sf-name').value.trim();
+  var email = document.getElementById('sf-email').value.trim();
+  var err = document.getElementById('sf-err');
+  var btn = document.getElementById('sf-btn');
+  err.style.display = 'none';
+  if (!name) { err.textContent = 'Your full name is required.'; err.style.display = 'block'; return; }
+  if (email && !email.includes('@')) { err.textContent = 'Please enter a valid email address.'; err.style.display = 'block'; return; }
+  if (!tournId) { err.textContent = 'Tournament not loaded. Please refresh and try again.'; err.style.display = 'block'; return; }
+  btn.textContent = 'Submitting...'; btn.disabled = true;
+
+  var avContainer = document.getElementById('avail-section');
+  var numDays = avContainer ? parseInt(avContainer.getAttribute('data-days') || '0') : 0;
+  var submissions = [];
+
+  if (numDays > 1) {
+    // Multi-day: submit one row per available day
+    for (var i = 0; i < numDays; i++) {
+      var checked = document.getElementById('day-avail-' + i);
+      if (!checked || !checked.checked) continue;
+      var dayDate = document.getElementById('day-date-' + i).value;
+      var availStart = document.getElementById('day-start-' + i).value.trim() || '08:00';
+      var availEnd = document.getElementById('day-end-' + i).value.trim() || '18:00';
+      if (!isValidTime(availStart) || !isValidTime(availEnd)) {
+        err.textContent = 'Invalid time format for day ' + dayDate + '. Use HH:MM (24h).';
+        err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false; return;
+      }
+      if (!isTimeBefore(availStart, availEnd)) {
+        err.textContent = 'Availability must start before end on ' + dayDate + '.';
+        err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false; return;
+      }
+      var blocked = document.getElementById('sf-blocked') ? document.getElementById('sf-blocked').value.trim() : '';
+      submissions.push({
+        tournament_id: tournId, org_id: orgId,
+        official_name: name, official_email: email,
+        avail_start: availStart,
+        avail_end: availEnd,
+        blocked_times: blocked,
+        max_games: document.getElementById('day-max-' + i).value ? parseInt(document.getElementById('day-max-' + i).value) : null,
+        day_date: dayDate,
+        notes: document.getElementById('sf-notes').value.trim()
+      });
+    }
+    if (!submissions.length) {
+      err.textContent = 'Please select at least one day you are available.';
+      err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false; return;
+    }
+  } else {
+    // Single day
+    var availStart = document.getElementById('sf-start').value.trim() || '08:00';
+    var availEnd = document.getElementById('sf-end').value.trim() || '18:00';
+    if (!isValidTime(availStart) || !isValidTime(availEnd)) {
+      err.textContent = 'Invalid time format. Use HH:MM (24h).';
+      err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false; return;
+    }
+    if (!isTimeBefore(availStart, availEnd)) {
+      err.textContent = 'Availability start must be before end.';
+      err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false; return;
+    }
+    submissions.push({
+      tournament_id: tournId, org_id: orgId,
+      official_name: name, official_email: email,
+      avail_start: availStart,
+      avail_end: availEnd,
+      blocked_times: document.getElementById('sf-blocked').value.trim(),
+      max_games: document.getElementById('sf-max').value ? parseInt(document.getElementById('sf-max').value) : null,
+      notes: document.getElementById('sf-notes').value.trim()
+    });
+  }
+
+  // Submit all day rows
+  Promise.all(submissions.map(function(data) {
+    return fetch(SUPA_URL + '/rest/v1/availability', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify(data)
+    });
+  })).then(function(responses) {
+    var allOk = responses.every(function(r) { return r.ok || r.status === 201; });
+    if (allOk) {
+      document.getElementById('form-card').style.display = 'none';
+      document.getElementById('sf-success').style.display = 'block';
+    } else {
+      err.textContent = 'Submission failed. Please try again.';
+      err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false;
+    }
+  }).catch(function(e) {
+    err.textContent = 'Network error: ' + e.message;
+    err.style.display = 'block'; btn.textContent = 'Submit Availability'; btn.disabled = false;
+  });
+}
+
+loadTournament();
+</script>
+</body>
+</html>

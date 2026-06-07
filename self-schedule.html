@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>StripeUp — Pick Your Games</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F2F7;color:#1B2A4A;font-size:15px;padding-bottom:0}
+
+/* HEADER */
+.hdr{background:#0E1C35;padding:13px 18px}
+.hdr-logo{font-size:20px;font-weight:800;color:#C9A84C}
+.hdr-sub{font-size:11px;color:#8A9BB8;margin-top:2px}
+
+/* TOURNAMENT BANNER */
+.ban{background:linear-gradient(135deg,#0E1C35,#1B2A4A);padding:14px 18px;border-bottom:3px solid #C9A84C}
+.ban-name{font-size:18px;font-weight:800;color:#fff;margin-bottom:4px}
+.ban-meta{font-size:13px;color:#8A9BB8}
+.ban-pay{display:inline-block;background:#C9A84C;color:#0E1C35;font-weight:800;font-size:13px;padding:3px 12px;border-radius:10px;margin-top:6px}
+
+/* AVAILABILITY FORM */
+.avail{background:#fff;padding:14px 18px;border-bottom:1px solid #E0E6F0}
+.avail-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#6B7A99;margin-bottom:10px}
+.avail-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.avail-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:#6B7A99;display:block;margin-bottom:5px}
+.avail select{width:100%;padding:9px 11px;border:1px solid #D1D9E6;border-radius:7px;font-size:14px;color:#1B2A4A;background:#F4F6F9}
+.show-btn{width:100%;padding:13px;background:#0E1C35;color:#C9A84C;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+.show-btn:active{background:#1B2A4A}
+
+/* ── STICKY STATUS BAR (always visible after blocks load) ── */
+.status-bar{position:sticky;top:0;z-index:50;background:#0E1C35;border-bottom:2px solid #C9A84C;padding:0;display:none}
+
+/* Timer row — shown always */
+.sb-timer-row{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid #1B2A4A}
+.sb-timer-left{display:flex;align-items:center;gap:10px}
+.sb-timer-icon{font-size:16px;color:#8A9BB8}
+.sb-timer-label{font-size:12px;color:#8A9BB8}
+.sb-timer-val{font-size:22px;font-weight:800;color:#8A9BB8;font-variant-numeric:tabular-nums;min-width:52px}
+.sb-timer-val.active{color:#C9A84C}
+.sb-timer-val.warn{color:#F59E0B}
+.sb-timer-val.red{color:#EF4444}
+.sb-timer-val.flash{color:#EF4444;animation:timerFlash .5s step-start infinite}
+@keyframes timerFlash{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
+.sb-timer-bar-bg{flex:1;max-width:160px;height:4px;background:#1B2A4A;border-radius:2px;overflow:hidden}
+.sb-timer-bar-fill{height:100%;background:#C9A84C;border-radius:2px;transition:width 1s linear,background .3s}
+.sb-confirm-btn{background:#C9A84C;color:#0E1C35;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
+.sb-confirm-btn:disabled{background:#2E4170;color:#6B7A99;cursor:not-allowed}
+
+/* Selection chips row — shown only when blocks selected */
+.sb-sel-row{padding:8px 18px;display:none;flex-wrap:wrap;gap:8px;align-items:center;border-bottom:1px solid #1B2A4A}
+.sb-chip{background:#1B2A4A;border:1px solid #C9A84C;border-radius:6px;padding:5px 10px;font-size:13px;font-weight:700;color:#C9A84C;display:flex;align-items:center;gap:7px}
+.sb-chip-x{cursor:pointer;color:#EF4444;font-size:16px;line-height:1;font-weight:800}
+.sb-chip-x:hover{color:#FCA5A5}
+.sb-total{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
+
+/* Rest message row */
+.sb-rest-row{padding:6px 18px;display:none;flex-wrap:wrap;gap:8px}
+.sb-rest-pill{font-size:12px;color:#854F0B;background:#FEF3DC;border-radius:5px;padding:3px 10px;display:inline-block}
+
+/* GRID */
+.grid-sect{padding:12px 18px 20px;display:none}
+.grid-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6B7A99;margin-bottom:10px}
+.grid-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;font-size:12px;min-width:100%}
+th{background:#0E1C35;color:#fff;padding:8px 10px;text-align:center;font-size:11px;white-space:nowrap;border:1px solid #1B2A4A;font-weight:600;min-width:88px}
+th.th-t{text-align:left;min-width:54px;position:sticky;left:0;z-index:2}
+td{border:0.5px solid #E0E6F0;padding:1px;min-width:88px}
+td.td-t{padding:7px 10px;font-size:12px;font-weight:700;color:#6B7A99;background:#F8F9FC;white-space:nowrap;position:sticky;left:0;z-index:1;border-right:2px solid #E0E6F0}
+.cell{padding:7px 6px;cursor:pointer;min-height:42px;display:flex;flex-direction:column;justify-content:center;border-radius:4px;border:2px solid transparent;transition:filter .12s}
+.cell:not(.cg):not(.ce):not(.chld):active{filter:brightness(.8)}
+.c0{background:#DBEAFE;color:#1E3A8A;border-color:#93C5FD}
+.c1{background:#D1FAE5;color:#064E3B;border-color:#6EE7B7}
+.c2{background:#FEF9C3;color:#713F12;border-color:#FDE047}
+.c3{background:#FCE7F3;color:#831843;border-color:#F9A8D4}
+.c4{background:#EDE9FE;color:#4C1D95;border-color:#C4B5FD}
+.c5{background:#FFEDD5;color:#7C2D12;border-color:#FDB889}
+.c6{background:#CFFAFE;color:#164E63;border-color:#67E8F9}
+.c7{background:#FFE4E6;color:#881337;border-color:#FDA4AF}
+.csel{background:#0E1C35;color:#C9A84C;border-color:#C9A84C;border-width:2.5px}
+.cpartial{background:#FFF7ED;border:1.5px solid #F59E0B;cursor:pointer;color:#92400E}
+.cg{opacity:.55;cursor:default;pointer-events:none}
+.cna{background:#F3F4F6;color:#6B7280;border-color:transparent;cursor:default}
+.cfull{background:#EF4444;color:#fff;border:2px solid #B91C1C;cursor:not-allowed;opacity:1}
+.chld{background:#FEF3DC;color:#92400E;border-color:#F59E0B;border-width:2px;cursor:default}
+.ce{background:transparent;border-color:transparent;cursor:default}
+.cell-id{font-size:12px;font-weight:800;letter-spacing:.2px}
+.cell-info{font-size:10px;margin-top:2px;line-height:1.3}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;padding:10px 12px;background:#F8F9FC;border-radius:10px;border:1px solid #E0E6F0}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:#4B5878;background:#fff;border:1px solid #E0E6F0;border-radius:20px;padding:5px 11px 5px 6px;white-space:nowrap}
+.legend-swatch{width:18px;height:18px;border-radius:4px;flex-shrink:0;border-width:2px;border-style:solid}
+.ls-sel{background:#0E1C35;border-color:#C9A84C}
+.ls-hld{background:#FEF3DC;border-color:#F59E0B}
+.ls-partial{background:#FFF7ED;border-color:#F59E0B;border-width:1.5px}
+.ls-full{background:#EF4444;border-color:#B91C1C}
+.ls-na{background:#F3F4F6;border-color:#D1D5DB}
+.ls-gray{background:#E5E7EB;border-color:#D1D5DB}
+
+/* ERROR / LOADING */
+.err-box{background:#FEE2E2;border:1px solid #EF4444;border-radius:10px;padding:22px;margin:20px 18px;font-size:15px;color:#7F1D1D;text-align:center}
+.loading{text-align:center;padding:40px 20px;color:#6B7A99;font-size:15px}
+
+/* TOAST */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#0E1C35;color:#C9A84C;padding:13px 22px;border-radius:10px;font-size:14px;font-weight:700;z-index:200;border:1.5px solid #C9A84C;max-width:320px;text-align:center;display:none;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+
+/* SUCCESS */
+.success{text-align:center;padding:60px 20px}
+.suc-icon{font-size:56px;margin-bottom:16px}
+.suc-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.suc-detail{font-size:14px;color:#6B7A99;line-height:1.8}
+.suc-games{margin:16px 0;background:#EAF3DE;border-radius:10px;padding:14px 16px;text-align:left}
+.suc-row{padding:6px 0;border-bottom:0.5px solid #C3E6CB;display:flex;justify-content:space-between;font-size:13px}
+.suc-row:last-child{border:none}
+
+/* MOBILE OPTIMIZATION */
+@media(max-width:768px){
+  /* Reduce horizontal padding on main sections */
+  .hdr, .ban, .avail, .grid-sect {padding-left:12px;padding-right:12px;}
+  
+  /* Make availability form single column */
+  .avail-grid{grid-template-columns:1fr;}
+  
+  /* Smaller banner text */
+  .ban-name{font-size:16px;}
+  
+  /* Compact status bar */
+  .sb-timer-row{padding:8px 12px;}
+  .sb-sel-row, .sb-rest-row{padding:6px 12px;}
+  
+  /* Smaller grid elements */
+  .grid-lbl{font-size:11px;}
+  th, td{min-width:70px;}
+  .cell{min-height:36px;padding:5px 4px;}
+  .cell-id{font-size:11px;}
+  .cell-info{font-size:9px;margin-top:1px;}
+  
+  /* Adjust help modal */
+  #help-modal{padding:16px 12px;}
+  #help-modal > div{max-width:none;}
+  
+  /* Legend on mobile */
+  .legend{gap:5px;padding:8px 10px;}
+  .legend-item{font-size:10px;padding:4px 9px 4px 5px;}
+  .legend-swatch{width:15px;height:15px;}
+  
+  /* Smaller success page */
+  .success{padding:40px 12px;}
+  .suc-icon{font-size:48px;}
+  .suc-title{font-size:20px;}
+  .suc-detail{font-size:13px;}
+  .suc-games{padding:12px;}
+  
+  /* Toast width */
+  .toast{max-width:280px;}
+}
+</style>
+</head>
+<body>
+<div class="hdr"><div class="hdr-logo">StripeUp</div><div class="hdr-sub">Official self-scheduling</div></div>
+<div id="app"><div class="loading">Loading&#8230;</div></div>
+
+<!-- STICKY STATUS BAR -->
+<div class="status-bar" id="status-bar">
+  <!-- Timer row — always visible -->
+  <div class="sb-timer-row">
+    <div class="sb-timer-left">
+      <span class="sb-timer-icon">&#9201;</span>
+      <span class="sb-timer-label" id="sb-tmr-lbl">Select a block to start your 15-min hold</span>
+      <span class="sb-timer-val" id="sb-tmr-val">15:00</span>
+      <div class="sb-timer-bar-bg" id="sb-bar-bg" style="display:none">
+        <div class="sb-timer-bar-fill" id="sb-bar-fill" style="width:100%"></div>
+      </div>
+    </div>
+    <button class="sb-confirm-btn" id="sb-confirm-btn" onclick="doConfirm()" disabled>Confirm Schedule</button>
+  </div>
+  <!-- Selected chips row -->
+  <div class="sb-sel-row" id="sb-sel-row"></div>
+  <!-- Rest messages -->
+  <div class="sb-rest-row" id="sb-rest-row"></div>
+</div>
+
+<!-- TIP BAR -->
+<div id="tip-bar" style="display:none;background:#1B2A4A;padding:10px 18px;border-bottom:1px solid #2E4170;display:none;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+  <span style="font-size:13px;color:#8A9BB8">&#128161; Tap a colored block to claim it. Your hold lasts <strong style="color:#C9A84C">15 minutes</strong> to confirm.</span>
+  <button onclick="openHelpModal()" style="background:none;border:1px solid #C9A84C;color:#C9A84C;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">How does this work? &#8594;</button>
+</div>
+
+<!-- HELP MODAL OVERLAY -->
+<div id="help-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:300;overflow-y:auto;padding:20px 16px">
+  <div style="background:#fff;border-radius:12px;max-width:520px;margin:0 auto;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3)">
+    <div style="background:#0E1C35;padding:16px 20px;border-bottom:3px solid #C9A84C;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:17px;font-weight:700;color:#C9A84C">How self-scheduling works</div>
+        <div style="font-size:12px;color:#8A9BB8;margin-top:2px">Read this once &mdash; takes 60 seconds</div>
+      </div>
+      <button onclick="closeHelpModal()" style="background:none;border:none;color:#8A9BB8;font-size:22px;cursor:pointer;line-height:1;padding:0 4px">&times;</button>
+    </div>
+    <div style="padding:20px;font-family:inherit">
+      <div style="display:flex;gap:14px;margin-bottom:18px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#C9A84C;color:#0E1C35;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1B2A4A;margin-bottom:3px">Enter your availability</div>
+          <div style="font-size:13px;color:#6B7A99;line-height:1.5">Set when you arrive and when you must leave. Only blocks that finish before your leave time will appear. Set your max games for the day.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;margin-bottom:18px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#C9A84C;color:#0E1C35;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1B2A4A;margin-bottom:3px">Tap a block to select it</div>
+          <div style="font-size:13px;color:#6B7A99;line-height:1.5">A block is 2 or 3 consecutive games on the same court. Tap any cell in a block and all games in it are selected together. Selected blocks turn dark navy.</div>
+          <div style="background:#F4F6F9;border-radius:7px;padding:10px 12px;margin-top:6px;font-size:12px;color:#6B7A99;line-height:1.7">
+            <span style="background:#0E1C35;color:#C9A84C;padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700">1A</span> &nbsp;selected by you &nbsp;&nbsp;
+            <span style="background:#FEF3DC;color:#92400E;padding:1px 7px;border-radius:3px;font-size:11px">held</span> &nbsp;another official is deciding &nbsp;&nbsp;
+            <span style="background:#F4F6F9;color:#9CA3AF;padding:1px 7px;border-radius:3px;font-size:11px">taken</span> &nbsp;already claimed
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;margin-bottom:18px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#C9A84C;color:#0E1C35;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1B2A4A;margin-bottom:3px">Rest slots are handled automatically</div>
+          <div style="font-size:13px;color:#6B7A99;line-height:1.5">After working 3 games you must rest 2 slots. After 2 games you rest 1 slot. The grid automatically greys out those times after you select a block &mdash; you don&rsquo;t need to calculate anything.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;margin-bottom:18px">
+        <div style="width:32px;height:32px;border-radius:50%;background:#C9A84C;color:#0E1C35;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1B2A4A;margin-bottom:3px">Confirm within 15 minutes</div>
+          <div style="font-size:13px;color:#6B7A99;line-height:1.5">Once you pick a block the 15-minute hold timer starts. Select your second block if you want more games, then tap <strong>Confirm Schedule</strong>. If the timer runs out your blocks release back to the pool.</div>
+          <div style="background:#EAF3DE;border-radius:7px;padding:9px 12px;margin-top:6px;font-size:12px;color:#27500A">&#9201; The timer is shown at the top of the page at all times.</div>
+        </div>
+      </div>
+      <div style="height:0.5px;background:#E0E6F0;margin:16px 0"></div>
+      <div style="font-size:12px;color:#6B7A99;line-height:1.8">
+        <strong style="color:#1B2A4A">Can I change my mind?</strong> Yes &mdash; tap a selected block or the &times; in the header bar to remove it. The timer resets if you remove all selections.<br><br>
+        <strong style="color:#1B2A4A">A block shows &ldquo;held&rdquo;</strong> &mdash; another official is deciding. Wait a few minutes &mdash; if they don&rsquo;t confirm it releases automatically.<br><br>
+        <strong style="color:#1B2A4A">Need help?</strong> Contact your assigner directly.
+      </div>
+      <button onclick="closeHelpModal()" style="width:100%;margin-top:18px;padding:12px;background:#0E1C35;color:#C9A84C;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">Got it &mdash; let me pick my games</button>
+    </div>
+  </div>
+</div>
+
+<div id="grid-sect" class="grid-sect">
+  <div class="grid-lbl" id="grid-lbl">Tap any block to select it</div>
+  <!-- LEGEND: DO NOT REMOVE OR MODIFY -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-swatch ls-sel"></div>Selected by you</div>
+    <div class="legend-item"><div class="legend-swatch ls-hld"></div>Held by another (~15 min)</div>
+    <div class="legend-item"><div class="legend-swatch ls-partial"></div>Partially filled (1/2)</div>
+    <div class="legend-item"><div class="legend-swatch ls-full"></div>Fully assigned</div>
+    <div class="legend-item"><div class="legend-swatch ls-na"></div>Outside your window</div>
+    <div class="legend-item"><div class="legend-swatch ls-gray"></div>Rest / conflict</div>
+  </div>
+  <!-- END LEGEND -->
+  <div class="grid-wrap"><div id="grid"></div></div>
+  <div id="grid-helper" style="text-align:center;font-size:11px;color:#8A9BB8;margin-top:10px;padding:6px 12px;background:#F4F6F9;border-radius:6px;border:1px solid #E0E6F0">
+    Select minimum 2 blocks &nbsp;&middot;&nbsp; Rest periods are required after each work set
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+var SB_DIRECT_URL='https://mqbxqtsnfzcmmzpbrxnx.supabase.co';
+var SB_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xYnhxdHNuZnpjbW16cGJyeG54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NDU0OTMsImV4cCI6MjA4OTUyMTQ5M30.BOYz-2OjGo9LYaoHUrmgp_AsaU6nlAPmK3QGiwV7J1g';
+var supabase=window.supabase.createClient(SB_DIRECT_URL,SB_ANON_KEY);
+var SB_URL='/.netlify/functions/supabase-proxy';
+var ALL_SLOTS=['6:00','7:00','8:00','9:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00'];
+var COLORS=['c0','c1','c2','c3','c4','c5','c6','c7'];
+var T=null,OFFICIAL=null,DAYS=[],SELDAY=null,CLAIMS_MAP={},BLKS=[],COURTS=[],SLOTS=[],SM={},SEL=[],aS=0,aE=0,mxG=6,tSec=900,tInt=null,pollInterval=null;
+var GAMES_MAP={}; // game_id → time_slot — same lookup the assigner uses in brRender()
+
+function newSID(){return 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+var SID=newSID(); // Fresh SID every page load — expired holds cleaned up on load
+var AUTH_TOKEN=null; // Store the invite token for RLS authentication
+var TOKEN_STATUS='invited'; // Current status of this official's invite token
+
+function g(id){return document.getElementById(id);}
+function toM(t){var p=(t||'0:0').split(':');return +p[0]*60+ +p[1];}
+function toTm(m){return Math.floor(m/60)+':00';}
+function sbF(path,opts){
+  var headers={'Content-Type':'application/json'};
+  if(AUTH_TOKEN) headers['Authorization']='Bearer '+AUTH_TOKEN;
+  if(opts&&opts.headers) Object.assign(headers,opts.headers);
+  return fetch(SB_URL+'/rest/v1/'+path,Object.assign({
+    headers:headers
+  },opts||{}));
+}
+function toast(msg,ms){var el=g('toast');if(!el)return;el.textContent=msg;el.style.display='block';setTimeout(function(){el.style.display='none';},ms||3000);}
+
+function loadTournamentByCode(code){
+  sbF('tournaments?signup_code=eq.'+code+'&select=id,name,date,location,courts,pay_per_game,status,scheduling_mode,self_schedule_deadline,officials_per_game,show_co_officials')
+  .then(function(r){return r.json();})
+  .then(function(data){
+    if(!data||!data.length){showErr('Tournament not found.');return;}
+    T=data[0];
+    if(T.status==='cancelled'){showErr('This tournament has been cancelled.');return;}
+    if(T.status!=='open'&&T.scheduling_mode!=='self'){
+      var msg=T.date&&new Date(T.date)<new Date()
+        ?'This link has expired. Contact your assigner if you still need to select your games.'
+        :'Self-scheduling is not open yet. Contact your assigner.';
+      showErr(msg);return;
+    }
+    if(T.self_schedule_deadline&&new Date()>new Date(T.self_schedule_deadline)){showErr('Self-scheduling has closed.');return;}
+    loadDaysThenForm();
+  }).catch(function(e){showErr('Connection error: '+e.message);});
+}
+
+function loadDaysThenForm(){
+  sbF('tournament_days?tournament_id=eq.'+T.id+'&order=day_number.asc&select=id,day_date,day_number,start_time,end_time,courts,officials_needed')
+  .then(function(r){return r.json();})
+  .then(function(data){
+    DAYS=data||[];
+    if(DAYS.length>0)SELDAY=DAYS[0];
+    renderForm();
+  }).catch(function(){
+    DAYS=[];
+    renderForm();
+  });
+}
+
+// INIT — supports both token-based links (from invite_tokens) and direct signup_code links
+var params=new URLSearchParams(window.location.search);
+var code=params.get('signup')||params.get('token');
+console.log('[INIT] token from URL:', code);
+if(!code){showErr('No tournament link found. Use the link your assigner sent you.');}
+else{
+  // Use Supabase client directly — sbF proxy strips query strings, returning
+  // wrong rows (all tokens, first row wins) causing wrong official name to load.
+  supabase.from('invite_tokens')
+    .select('official_id,tournament_id,used,expires_at,status,declined_at')
+    .eq('token', code)
+    .limit(1)
+    .then(function(result){
+      console.log('[INIT] invite_tokens query result — error:', result.error, '| rows:', result.data && result.data.length);
+      var data=result.data;
+      if(result.error||!data||!data.length){
+        console.log('[INIT] no token row found — trying as signup_code');
+        // Not a token — try as direct signup_code (legacy/assigner direct links)
+        loadTournamentByCode(code);
+        return;
+      }
+      var tk=data[0];
+      console.log('[INIT] token row found — official_id:', tk.official_id, '| tournament_id:', tk.tournament_id, '| used:', tk.used, '| expires_at:', tk.expires_at);
+      if(tk.used){showErr('This invite link has already been used.');return;}
+      if(new Date(tk.expires_at)<new Date()){showErr('This link has expired. Contact your assigner if you still need to select your games.');return;}
+
+      AUTH_TOKEN=code;
+      TOKEN_STATUS=tk.status||'invited';
+
+      if(!tk.official_id||!tk.tournament_id){
+        loadTournamentByCode(code);
+        return;
+      }
+
+      // Fetch official and tournament in parallel — both use Supabase client directly
+      Promise.all([
+        supabase.from('officials')
+          .select('id,name,email,phone')
+          .eq('id', tk.official_id)
+          .limit(1),
+        supabase.from('tournaments')
+          .select('id,name,date,location,courts,pay_per_game,status,scheduling_mode,self_schedule_deadline,officials_per_game,show_co_officials')
+          .eq('id', tk.tournament_id)
+          .limit(1)
+      ]).then(function(results){
+        var oResult=results[0], tResult=results[1];
+        console.log('[INIT] officials query — error:', oResult.error, '| name:', oResult.data && oResult.data[0] && oResult.data[0].name);
+        console.log('[INIT] tournaments query — error:', tResult.error, '| name:', tResult.data && tResult.data[0] && tResult.data[0].name);
+        if(oResult.error||!oResult.data||!oResult.data.length){showErr('Official not found for this token.');return;}
+        if(tResult.error||!tResult.data||!tResult.data.length){showErr('Tournament not found.');return;}
+        OFFICIAL=oResult.data[0];
+        T=tResult.data[0];
+        console.log('[INIT] OFFICIAL set to:', OFFICIAL.name, '(id:', OFFICIAL.id, ') | T set to:', T.name);
+        if(T.status==='cancelled'){showErr('This tournament has been cancelled.');return;}
+        if(T.status!=='open'&&T.scheduling_mode!=='self'){
+          var msg='Self-scheduling is not open yet. Contact your assigner.';
+          if(T.date&&new Date(T.date)<new Date()){msg='This tournament has already taken place.';}
+          showErr(msg);return;
+        }
+        if(T.self_schedule_deadline&&new Date()>new Date(T.self_schedule_deadline)){showErr('Self-scheduling has closed.');return;}
+        // Release ALL holds on page load — any hold belongs to a previous session that is gone
+        supabase.from('available_blocks')
+          .update({status:'open',held_by:null,held_until:null})
+          .eq('tournament_id',T.id)
+          .eq('status','held')
+          .then(function(){}).catch(function(){});
+        renderForm();
+      }).catch(function(e){showErr('Connection error: '+e.message);});
+    }).catch(function(e){
+      console.log('[INIT] invite_tokens query threw exception:', e.message, '— falling back to signup_code');
+      loadTournamentByCode(code);
+    });
+}
+
+function renderOfficialGreeting(name){
+  var firstName=(name||'Official').split(' ')[0];
+  var el=document.createElement('div');
+  el.id='official-greeting';
+  el.style.cssText='background:#1a2744;border-left:4px solid #C9A84C;padding:10px 18px;font-size:14px;color:#ffffff;';
+  el.innerHTML='&#128075; Hey <strong>'+firstName+'</strong> \u2014 pick your games below. Your hold lasts <strong>15 minutes</strong> once you select a block.';
+  var app=g('app');
+  if(app)app.insertAdjacentElement('afterbegin',el);
+  else document.body.insertAdjacentElement('afterbegin',el);
+}
+
+function fmtDay(d){
+  if(!d)return'';
+  var dt=new Date(d+'T00:00:00');
+  return dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+}
+
+function renderForm(){
+  // Build availability time options: 7:00 AM – 11:00 PM in 30-min steps, 12-hour display
+  function avOpts(defVal){
+    var o='';
+    for(var h=7;h<=23;h++){
+      for(var m=0;m<60;m+=30){
+        if(h===23&&m>0)break;
+        var val=h+':'+('0'+m).slice(-2);
+        var h12=h>12?h-12:h===0?12:h;
+        var lbl=h12+':'+(m===0?'00':'30')+' '+(h<12?'AM':'PM');
+        o+='<option value="'+val+'"'+(val===defVal?' selected':'')+'>'+lbl+'</option>';
+      }
+    }
+    return o;
+  }
+  var mO=[2,3,4,5,6].map(function(v){return '<option value="'+v+'"'+(v===6?' selected':'')+'>'+v+'</option>';}).join('');
+  var signupOpen = T && T.status === 'open';
+  var greetHtml='';
+  if(OFFICIAL){
+    var fn=OFFICIAL.name&&OFFICIAL.name.trim()?OFFICIAL.name.trim().split(' ')[0]:'Official';
+    greetHtml='<div style="background:#1a2744;border-left:4px solid #C9A84C;padding:12px 18px;font-size:14px;color:#ffffff;">&#128075; Hey <strong>'+fn+'!</strong> You\'ve been invited to self-schedule for <strong>'+T.name+'</strong>.'+(signupOpen?' Tap a block to claim it &mdash; you have <strong>15 minutes</strong> to confirm once you start.':' <span style="color:#FC8181">Signup is now closed.</span>')+'</div>';
+    if(signupOpen){
+      greetHtml+='<div style="background:#f0f4ff;border-bottom:1px solid #dde3f0;padding:10px 18px;font-size:13px;color:#3a4a6b;"><span style="font-weight:700;color:#1B2A4A;">How it works:</span> &#9312; Set your availability &nbsp;&rarr;&nbsp; &#9313; Tap a colored block to select it &nbsp;&rarr;&nbsp; &#9314; Hit <strong>Confirm</strong> before your 15-min timer runs out.</div>';
+      if(TOKEN_STATUS==='declined'){
+        greetHtml+='<div style="background:#FEF9C3;border-left:4px solid #CA8A04;padding:12px 18px;font-size:13px;color:#713F12;">You previously marked yourself as unavailable for this tournament.'
+          +'<br><button onclick="undeclineAvailability()" style="margin-top:8px;padding:7px 16px;background:#1B2A4A;color:#C9A84C;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">&#9654; I\'ve become available &mdash; show blocks</button></div>';
+      } else {
+        greetHtml+='<div style="background:#F4F6F9;border-bottom:1px solid #E0E6F0;padding:8px 18px;font-size:12px;color:#6B7A99;text-align:right;">'
+          +'Not available for this tournament? <button onclick="declineAvailability()" style="background:none;border:none;color:#C0392B;font-size:12px;cursor:pointer;text-decoration:underline;padding:0">I\'m not available</button></div>';
+      }
+    }
+  }
+  // If declined and signup open, show only the declined message (no block grid)
+  if(TOKEN_STATUS==='declined'&&signupOpen){
+    g('app').innerHTML=
+      '<div class="ban"><div class="ban-name">'+T.name+'</div>'+
+      '<div class="ban-meta">&#128197; '+(T.date||'')+' &nbsp;&middot;&nbsp; &#128205; '+(T.location||'')+' &nbsp;&middot;&nbsp; '+T.courts+' courts</div>'+
+      (T.pay_per_game?'<div class="ban-pay">$'+T.pay_per_game+' per game</div>':'')+
+      '</div>'+greetHtml;
+    return;
+  }
+  // Day tabs HTML
+  var dayTabsHtml='';
+  if(DAYS.length>1){
+    var tabs=DAYS.map(function(d){
+      var active=SELDAY&&SELDAY.id===d.id;
+      return '<button onclick="selectDay(\''+d.id+'\')" style="flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid '+(active?'#C9A84C':'#D1D9E6')+';background:'+(active?'#0E1C35':'#fff')+';color:'+(active?'#C9A84C':'#6B7A99')+';cursor:pointer;">'+
+        'Day '+d.day_number+' &mdash; '+fmtDay(d.day_date)+
+      '</button>';
+    }).join('');
+    dayTabsHtml='<div style="display:flex;gap:8px;padding:10px 18px;background:#fff;border-bottom:1px solid #E0E6F0;overflow-x:auto;">'+tabs+'</div>';
+  }
+  var avTitle=DAYS.length>1&&SELDAY?'Your availability &mdash; '+fmtDay(SELDAY.day_date):'Your availability today';
+  g('app').innerHTML=
+    '<div class="ban"><div class="ban-name">'+T.name+'</div>'+
+    '<div class="ban-meta">&#128197; '+(T.date||'')+' &nbsp;&middot;&nbsp; &#128205; '+(T.location||'')+' &nbsp;&middot;&nbsp; '+T.courts+' courts</div>'+
+    (T.pay_per_game?'<div class="ban-pay">$'+T.pay_per_game+' per game</div>':'')+
+    '</div>'+greetHtml+dayTabsHtml+
+    '<div class="avail"><div class="avail-title">'+avTitle+'</div>'+
+    '<div class="avail-grid">'+
+    '<div><label class="avail-lbl">Available from</label><select id="av-s">'+avOpts('8:00')+'</select></div>'+
+    '<div><label class="avail-lbl">Must leave by</label><select id="av-e">'+avOpts('23:00')+'</select></div>'+
+    '<div><label class="avail-lbl">Max games</label><select id="av-m" onchange="onMaxGChange(this)">'+mO+'</select></div>'+
+    '</div>'+
+    '<button class="show-btn" onclick="loadBlocks()">Show Available Blocks</button></div>';
+}
+
+function declineAvailability(){
+  if(!AUTH_TOKEN){toast('No token — cannot save.',4000);return;}
+  supabase.from('invite_tokens')
+    .update({status:'declined',declined_at:new Date().toISOString()})
+    .eq('token',AUTH_TOKEN)
+    .then(function(r){
+      if(r.error){toast('Error saving: '+r.error.message,5000);return;}
+      TOKEN_STATUS='declined';
+      renderForm();
+    }).catch(function(e){toast('Error: '+e.message,5000);});
+}
+
+function undeclineAvailability(){
+  if(!AUTH_TOKEN){toast('No token — cannot save.',4000);return;}
+  supabase.from('invite_tokens')
+    .update({status:'invited',declined_at:null})
+    .eq('token',AUTH_TOKEN)
+    .then(function(r){
+      if(r.error){toast('Error saving: '+r.error.message,5000);return;}
+      TOKEN_STATUS='invited';
+      renderForm();
+    }).catch(function(e){toast('Error: '+e.message,5000);});
+}
+
+function selectDay(dayId){
+  SELDAY=DAYS.find(function(d){return d.id===dayId;})||SELDAY;
+  renderForm();
+}
+
+function onMaxGChange(sel){
+  var newMax=parseInt(sel.value);
+  if(SEL&&SEL.length>0){
+    var curGames=SEL.reduce(function(a,x){return a+x.game_count;},0);
+    if(curGames>newMax){
+      if(!confirm('Changing max games will clear your current selections. Continue?')){
+        sel.value=mxG;return;
+      }
+      SEL.forEach(function(b){
+        b.status='open';b.held_by=null;b.held_until=null;
+        supabase.from('available_blocks')
+          .update({status:'open',held_by:null,held_until:null})
+          .eq('id',b.id).eq('held_by',SID)
+          .then(function(){}).catch(function(){});
+      });
+      SEL=[];stopTimer();
+    }
+  }
+  mxG=newMax;
+  if(BLKS.length)renderGrid();
+}
+
+function loadBlocks(){
+  // Release any previously held blocks (Supabase client — proxy strips PATCH query strings)
+  SEL.forEach(function(b){
+    supabase.from('available_blocks')
+      .update({status:'open',held_by:null,held_until:null})
+      .eq('id',b.id).eq('held_by',SID)
+      .then(function(){}).catch(function(){});
+  });
+  // Release anything held by current session in DB
+  supabase.from('available_blocks')
+    .update({status:'open',held_by:null,held_until:null})
+    .eq('tournament_id',T.id).eq('held_by',SID)
+    .then(function(){}).catch(function(){});
+
+  SEL=[];stopTimer();
+  aS=toM(g('av-s').value);aE=toM(g('av-e').value);mxG=+g('av-m').value;
+  if(aS>=aE){alert('Set a valid time range.');return;}
+
+  // Show status bar and grid
+  g('status-bar').style.display='block';
+  g('grid-sect').style.display='block';
+  g('tip-bar').style.display='flex';
+  g('grid').innerHTML='<div class="loading">Loading blocks&#8230;</div>';
+  updateStatusBar();
+
+  // BUG 1 FIX: use Supabase client directly — proxy strips query strings on writes,
+  // and the old tournament_day_id filter doesn't exist on available_blocks table.
+  // Both sides (assigner Review Blocks + official self-schedule) query available_blocks
+  // by tournament_id only, so the same blocks always appear.
+  supabase.from('available_blocks')
+    .select('*')
+    .eq('tournament_id', T.id)
+    .neq('status', 'claimed')
+    .order('court_first', {ascending:true})
+    .order('start_time', {ascending:true})
+    .then(function(result){
+    if(result.error){g('grid').innerHTML='<div class="err-box">Error loading blocks: '+result.error.message+'</div>';return;}
+    BLKS=result.data||[];
+    var ci=0;BLKS.forEach(function(b){b._c=COLORS[ci%8];ci++;});
+    if(BLKS.length){
+      Promise.all([
+        supabase.from('claims').select('block_id,official_name,official_id')
+          .eq('tournament_id', T.id).eq('status', 'confirmed'),
+        supabase.from('games').select('game_id,time_slot')
+          .eq('tournament_id', T.id).order('time_slot', {ascending:true})
+      ]).then(function(results){
+        var clmResult=results[0], gamesResult=results[1];
+        CLAIMS_MAP={};
+        ((clmResult.data)||[]).forEach(function(c){
+          if(!CLAIMS_MAP[c.block_id])CLAIMS_MAP[c.block_id]={count:0,names:[]};
+          CLAIMS_MAP[c.block_id].count++;
+          if(c.official_name){
+            var parts=c.official_name.trim().split(' ');
+            var display=parts[0]+(parts.length>1?' '+parts[parts.length-1][0]+'.':'');
+            CLAIMS_MAP[c.block_id].names.push({full:c.official_name,display:display,id:c.official_id});
+          }
+        });
+        GAMES_MAP={};
+        ((gamesResult.data)||[]).forEach(function(gm){
+          if(gm.game_id&&gm.time_slot)GAMES_MAP[gm.game_id]=gm.time_slot;
+        });
+        buildMap();renderGrid();startRT();
+      }).catch(function(){buildMap();renderGrid();startRT();});
+    } else {
+      buildMap();renderGrid();startRT();
+    }
+  }).catch(function(e){g('grid').innerHTML='<div class="err-box">Error: '+e.message+'</div>';});
+}
+
+function buildMap(){
+  // Courts: distinct court_first values, sorted naturally
+  var cs={};
+  BLKS.forEach(function(b){if(b.court_first&&!cs[b.court_first])cs[b.court_first]=true;});
+  COURTS=Object.keys(cs).sort(function(a,b){return (a||'').localeCompare(b||'',undefined,{numeric:true});});
+
+  var hasGameData=Object.keys(GAMES_MAP).length>0;
+
+  if(hasGameData){
+    // Time rows: all distinct game time_slots — exactly what the assigner uses
+    var slotSet={};
+    Object.keys(GAMES_MAP).forEach(function(gid){var ts=GAMES_MAP[gid];if(ts)slotSet[ts]=true;});
+    SLOTS=Object.keys(slotSet).sort(function(a,b){return toM(a)-toM(b);});
+
+    // Grid map: court → time_slot → block, spanning every game in the block
+    SM={};
+    BLKS.forEach(function(b){
+      var ct=b.court_first;if(!ct)return;
+      if(!SM[ct])SM[ct]={};
+      var gameIds=typeof b.game_ids==='string'?JSON.parse(b.game_ids||'[]'):b.game_ids||[];
+      gameIds.forEach(function(gid){
+        var ts=GAMES_MAP[gid];
+        if(ts)SM[ct][ts]=b;
+      });
+    });
+  } else {
+    // Fallback: use block start_times when no game data is available
+    var ss={};
+    BLKS.forEach(function(b){if(b.start_time)ss[b.start_time]=true;});
+    SLOTS=Object.keys(ss).sort(function(a,b){return toM(a)-toM(b);});
+    SM={};
+    BLKS.forEach(function(b){
+      var ct=b.court_first;if(!ct||!b.start_time)return;
+      if(!SM[ct])SM[ct]={};
+      SM[ct][b.start_time]=b;
+    });
+  }
+}
+
+function bState(b){
+  var bs=toM(b.start_time),be=toM(b.end_time);
+  if(bs<aS||be>=aE)return{s:'na'}; // grey out if outside official's availability window
+  if(SEL.find(function(x){return x.id===b.id;}))return{s:'sel'};
+  var claimInfo=CLAIMS_MAP[b.id]||{count:0,names:[]};
+  var claimCount=claimInfo.count;
+  var needed=b.officials_needed||(SELDAY&&SELDAY.officials_needed)||T&&T.officials_per_game||2;
+  if(claimCount>=needed)return{s:'full',r:'Fully staffed',count:claimCount,needed:needed,names:claimInfo.names};
+  if(b.status==='held'&&b.held_by!==SID){
+    var ml=b.held_until?Math.ceil((new Date(b.held_until)-new Date())/60000):15;
+    return{s:'hld',r:'held by another official — releases in ~'+Math.max(1,ml)+'min',count:claimCount,needed:needed,names:claimInfo.names};
+  }
+  var cg=SEL.reduce(function(a,x){return a+(parseInt(x.game_count)||0);},0);
+  if(cg>=(mxG||6))return{s:'g',r:'max '+(mxG||6)+' games'};
+  var chkSlots=SLOTS.length?SLOTS:ALL_SLOTS;
+  var sT={};SEL.forEach(function(s){
+    chkSlots.forEach(function(t){var m=toM(t),ss=toM(s.start_time),se=toM(s.end_time);if(m>=ss&&m<=se)sT[t]=s.block_name||s.id;});
+  });
+  var sitB={};
+  SEL.forEach(function(s){
+    var sit=s.pattern==='W3'?2:1;
+    var restLabel='Rest required \u2014 '+(s.pattern==='W3'?'W3':'W2');
+    // Find the first slot AFTER end_time in the sorted slot list
+    var endM=toM(s.end_time);
+    var afterIdx=-1;
+    for(var i=0;i<chkSlots.length;i++){if(toM(chkSlots[i])>endM){afterIdx=i;break;}}
+    if(afterIdx>=0){
+      for(var j=0;j<sit&&afterIdx+j<chkSlots.length;j++){
+        sitB[chkSlots[afterIdx+j]]=restLabel;
+      }
+    }
+  });
+  // Working check: any game slot within this block's range overlaps a selected block
+  for(var i=0;i<chkSlots.length;i++){
+    var t=chkSlots[i],m=toM(t);
+    if(m<bs||m>be)continue;
+    if(sT[t])return{s:'g',r:'working '+sT[t]};
+  }
+  // Rest check: only based on block's START time — continuation rows of the same block
+  // that extend past the rest period must not be blocked just because an earlier row is in sitB
+  if(sitB[b.start_time])return{s:'g',r:sitB[b.start_time]};
+  return{s:'open'};
+}
+
+function sitFreeSlot(s){
+  // Returns the first time slot (minutes) when official is free after sitting
+  var sit=s.pattern==='W3'?2:1;
+  var endM=toM(s.end_time);
+  var chkSlots=SLOTS.length?SLOTS:ALL_SLOTS;
+  var afterIdx=-1;
+  for(var i=0;i<chkSlots.length;i++){if(toM(chkSlots[i])>endM){afterIdx=i;break;}}
+  if(afterIdx<0)return endM; // no slots after end — free immediately after
+  var freeIdx=afterIdx+sit;
+  return freeIdx<chkSlots.length?toM(chkSlots[freeIdx]):Infinity;
+}
+function hasAfterSit(s){
+  var cg=SEL.reduce(function(a,x){return a+x.game_count;},0);
+  if(cg>=mxG)return false;
+  var cl=sitFreeSlot(s);
+  if(cl>=aE)return false;
+  return BLKS.some(function(b){
+    if(b.status==='claimed')return false;
+    if(SEL.find(function(x){return x.id===b.id;}))return false;
+    var bs=toM(b.start_time),be=toM(b.end_time);
+    return bs>=cl&&bs>=aS&&be<aE&&b.status!=='held';
+  });
+}
+
+function renderGrid(){
+  if(!COURTS.length||!SLOTS.length){
+    g('grid').innerHTML='<div style="text-align:center;padding:24px;color:#6B7A99;font-size:14px">No blocks available for your time window.</div>';
+    return;
+  }
+  var bs={};BLKS.forEach(function(b){bs[b.id]=bState(b);});
+  var th='padding:7px 10px;background:#0E1C35;color:#fff;font-size:11px;text-align:center;border:1px solid #1B2A4A;font-weight:600';
+  var h='<table><thead><tr><th class="th-t">Time</th>';
+  COURTS.forEach(function(c){h+='<th style="'+th+'">'+c+'</th>';});
+  h+='</tr></thead><tbody>';
+  SLOTS.forEach(function(sl){
+    h+='<tr><td class="td-t">'+sl+'</td>';
+    COURTS.forEach(function(ct){
+      var b=SM[ct]&&SM[ct][sl];
+      if(!b){h+='<td><div class="cell ce"></div></td>';return;}
+      var st=bs[b.id];
+      // isFirst: slot matches the first game's time_slot (same logic as assigner's brRender)
+      var gameIds2=typeof b.game_ids==='string'?JSON.parse(b.game_ids||'[]'):b.game_ids||[];
+      var isFirst=Object.keys(GAMES_MAP).length
+        ? (gameIds2.length>0&&GAMES_MAP[gameIds2[0]]===sl)
+        : (sl===b.start_time);
+      // Grey out blocks outside availability window — show on first row only
+      if(st.s==='na'){
+        h+='<td><div class="cell cna">';
+        if(isFirst){
+          h+='<div class="cell-id">'+(b.block_name||b.id)+'</div>';
+          h+='<div class="cell-info" style="font-style:italic;font-size:11px">Outside window</div>';
+        }
+        h+='</div></td>';return;
+      }
+      var claimInfo2=CLAIMS_MAP[b.id]||{count:0,names:[]};
+      var needed2=b.officials_needed||(SELDAY&&SELDAY.officials_needed)||T&&T.officials_per_game||2;
+      var partialFill=claimInfo2.count>0&&claimInfo2.count<needed2&&st.s!=='sel'&&st.s!=='hld'&&st.s!=='g';
+      var cls='cell '+(st.s==='sel'?'csel':st.s==='hld'?'chld':st.s==='full'?'cfull':st.s==='g'?b._c+' cg':partialFill?'cpartial':b._c);
+      var oc=(st.s==='open'||partialFill)?' onclick="pick(\''+b.id+'\')"':st.s==='sel'?' onclick="unpick(\''+b.id+'\')"':'';
+      h+='<td><div class="'+cls+'"'+oc+'>';
+      if(isFirst){
+        var countTxt='';
+        var showCount=st.s==='open'||st.s==='sel'||partialFill;
+        if(needed2>1&&showCount){
+          var filled=claimInfo2.count;
+          var isFull=filled>=needed2;
+          var countColor=isFull?'rgba(0,0,0,0.4)':filled>0?'#92400E':'rgba(0,0,0,0.25)';
+          var countBg=filled>0&&!isFull?'rgba(245,158,11,0.15)':'transparent';
+          countTxt='<span style="font-size:9px;font-weight:'+(filled>0?'700':'400')+';margin-left:5px;color:'+countColor+';background:'+countBg+';padding:0 3px;border-radius:3px">'+filled+'/'+needed2+'</span>';
+        }
+        h+='<div class="cell-id">'+(b.block_name||b.id)+countTxt+'</div>';
+        // Co-official names on partially filled blocks
+        if(partialFill&&T&&T.show_co_officials&&claimInfo2.names&&claimInfo2.names.length>0){
+          var coNames=claimInfo2.names.map(function(n){return n.display;}).join(', ');
+          h+='<div class="cell-info" style="font-size:10px;color:rgba(0,0,0,0.55);font-style:italic">'+coNames+'</div>';
+        }
+        if(st.s==='full') h+='<div class="cell-info" style="color:#fff;font-weight:800;font-size:10px;letter-spacing:.5px">&#9632; FULL '+claimInfo2.count+'/'+needed2+'</div>';
+        else if(st.s==='hld'&&st.r) h+='<div class="cell-info">'+st.r+'</div>';
+        else if(st.s==='g'&&st.r){
+          var isRest=st.r.indexOf('Rest required')===0||st.r.indexOf('rest')===0;
+          var icon=isRest?'\u23f8 ':'';
+          h+='<div class="cell-info" style="font-size:11px;font-weight:600">'+icon+st.r+'</div>';
+        }
+      }
+      h+='</div></td>';
+    });
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  g('grid').innerHTML=h;
+  updateStatusBar();
+
+  var cg=SEL.reduce(function(a,b){return a+b.game_count;},0);
+  var lbl=g('grid-lbl');
+  if(lbl) lbl.textContent = cg>=mxG
+    ? 'Max games reached \u2014 confirm above \u2191'
+    : SEL.length===0
+      ? 'Tap any block to select it \u2014 minimum 2 blocks required'
+      : SEL.length===1
+        ? 'Select at least 1 more block to continue'
+        : 'Pick your next block ('+(mxG-cg)+' games remaining) or confirm above';
+}
+
+function updateStatusBar(){
+  var cg=SEL.reduce(function(a,b){return a+b.game_count;},0);
+  var _ppg=T?(parseFloat(T.pay_per_game)||0):0;
+  SEL.forEach(function(b){b.total_pay=b.game_count*_ppg;});
+  var pay=SEL.reduce(function(a,b){return a+b.total_pay;},0);
+
+  // Confirm button — minimum 2 blocks required
+  var btn=g('sb-confirm-btn');
+  if(btn){
+    if(SEL.length===0){
+      btn.disabled=true;
+      btn.textContent='Select at least 2 blocks to continue';
+    }else if(SEL.length===1){
+      btn.disabled=true;
+      btn.textContent='Select 1 more block to continue';
+    }else{
+      btn.disabled=false;
+      btn.textContent='Confirm Schedule';
+    }
+  }
+
+  // Selected chips row
+  var selRow=g('sb-sel-row');
+  if(selRow){
+    if(SEL.length>0){
+      selRow.style.display='flex';
+        var chips=SEL.map(function(s){
+          var ci=CLAIMS_MAP[s.id]||{count:0,names:[]};
+          var coTag='';
+          if(T&&T.show_co_officials&&ci.names&&ci.names.length>0){
+            var coStr=ci.names.map(function(n){return n.display;}).join(', ');
+            coTag='<span style="font-size:11px;color:#C9A84C;margin-left:4px;font-weight:400;opacity:0.85">with '+coStr+'</span>';
+          }
+          var courtLabel=s.court_first&&s.court_first.toLowerCase().startsWith('court')?s.court_first:'Court '+s.court_first;
+          return '<div class="sb-chip">'+(s.block_name||s.id)+' &mdash; '+courtLabel+coTag+
+            '<span class="sb-chip-x" onclick="unpick(\''+s.id+'\')" style="margin-left:6px">&#215;</span></div>';
+        }).join('');
+      chips += '<span class="sb-total">'+cg+'/'+mxG+' games &nbsp;&middot;&nbsp; $'+pay+'</span>';
+      selRow.innerHTML=chips;
+    }else{
+      selRow.style.display='none';
+    }
+  }
+
+  // Rest messages
+  var restRow=g('sb-rest-row');
+  if(restRow){
+    var rests=SEL.map(function(s){
+      if(!hasAfterSit(s))return '';
+      var cl=sitFreeSlot(s);
+      return '<span class="sb-rest-pill">Rest after '+(s.block_name||s.id)+': free at '+toTm(cl)+'</span>';
+    }).filter(Boolean).join('');
+    if(rests){restRow.style.display='flex';restRow.innerHTML=rests;}
+    else restRow.style.display='none';
+  }
+}
+
+function pick(bid){
+  var b=BLKS.find(function(x){return x.id===bid;});if(!b)return;
+  b.status='held';b.held_by=SID;b.held_until=new Date(Date.now()+15*60*1000).toISOString();
+  SEL.push(b);
+  if(SEL.length===1) startTimer(); // timer starts on FIRST selection
+  renderGrid();
+  var exp=new Date(Date.now()+15*60*1000).toISOString();
+  // Use Supabase client directly — sbF proxy strips query strings causing hold to fail
+  supabase.from('available_blocks')
+    .update({status:'held',held_by:SID,held_until:exp})
+    .eq('id',bid)
+    .eq('status','open')
+    .select()
+    .then(function(result){
+      if(result.error||!result.data||!result.data.length){
+        b.status='held';b.held_by='other';
+        SEL=SEL.filter(function(s){return s.id!==bid;});
+        if(!SEL.length)stopTimer();
+        renderGrid();
+        toast('That block was just grabbed! Pick another.',3000);
+      }
+    }).catch(function(){
+      b.status='open';b.held_by=null;
+      SEL=SEL.filter(function(s){return s.id!==bid;});
+      if(!SEL.length)stopTimer();
+      renderGrid();
+    });
+}
+
+function unpick(bid){
+  var b=BLKS.find(function(x){return x.id===bid;});if(!b)return;
+  SEL=SEL.filter(function(s){return s.id!==bid;});
+  // BUG 2+3 FIX: update local state immediately so re-pick works without refresh,
+  // then release in DB using Supabase client. .eq('held_by',SID) ensures we only
+  // release OUR hold, never someone else's.
+  b.status='open';b.held_by=null;b.held_until=null;
+  if(!SEL.length) stopTimer();
+  renderGrid();
+  supabase.from('available_blocks')
+    .update({status:'open',held_by:null,held_until:null})
+    .eq('id',bid)
+    .eq('held_by',SID)
+    .then(function(){}).catch(function(){});
+}
+
+// TIMER — visible always, inactive until first selection
+function startTimer(){
+  tSec=900;
+  var tv=g('sb-tmr-val'),lbl=g('sb-tmr-lbl'),bg=g('sb-bar-bg');
+  if(tv){tv.textContent='15:00';tv.className='sb-timer-val active';}
+  if(lbl) lbl.textContent='Hold expires in:';
+  if(bg) bg.style.display='block';
+  tInt=setInterval(function(){
+    tSec--;
+    var m=Math.floor(tSec/60),s=tSec%60,d=m+':'+(s<10?'0':'')+s;
+    var tv2=g('sb-tmr-val'),bar=g('sb-bar-fill');
+    if(tv2){
+      tv2.textContent=d;
+      tv2.className='sb-timer-val active'+(tSec<=30?' flash':tSec<=120?' red':tSec<=300?' warn':'');
+    }
+    if(bar){
+      var pct=Math.round(tSec/900*100);
+      bar.style.width=pct+'%';
+      bar.style.background=tSec<=120?'#EF4444':tSec<=300?'#F59E0B':'#C9A84C';
+    }
+    if(tSec<=0){
+      SEL.forEach(function(b){
+        supabase.from('available_blocks')
+          .update({status:'open',held_by:null,held_until:null})
+          .eq('id',b.id).eq('held_by',SID)
+          .then(function(){}).catch(function(){});
+        b.status='open';b.held_by=null;b.held_until=null;
+      });
+      SEL=[];stopTimer();renderGrid();
+      toast('Hold expired \u2014 blocks released. Pick again.',4000);
+    }
+  },1000);
+}
+
+function stopTimer(){
+  clearInterval(tInt);tInt=null;tSec=900;
+  var tv=g('sb-tmr-val'),lbl=g('sb-tmr-lbl'),bg=g('sb-bar-bg'),bar=g('sb-bar-fill');
+  if(tv){tv.textContent='15:00';tv.className='sb-timer-val';}
+  if(lbl) lbl.textContent='Select a block to start your 15-min hold';
+  if(bg) bg.style.display='none';
+  if(bar){bar.style.width='100%';bar.style.background='#C9A84C';}
+  var btn=g('sb-confirm-btn');
+  if(btn){btn.disabled=true;btn.textContent='Select at least 2 blocks to continue';}
+}
+
+// Validates that no selected block starts during a rest period imposed by an earlier selected block.
+// Returns array of violation description strings (empty = clean).
+function checkRestViolations(){
+  var chk=SLOTS.length?SLOTS:ALL_SLOTS;
+  var restMap={}; // slot → block_name that imposed the rest
+  var violations=[];
+  var sorted=SEL.slice().sort(function(a,b){return toM(a.start_time)-toM(b.start_time);});
+  sorted.forEach(function(s){
+    if(restMap[s.start_time]){
+      violations.push((s.block_name||s.id)+' starts during rest period after '+(restMap[s.start_time]));
+    }
+    var sit=s.pattern==='W3'?2:1;
+    var endM=toM(s.end_time);
+    var afterIdx=-1;
+    for(var i=0;i<chk.length;i++){if(toM(chk[i])>endM){afterIdx=i;break;}}
+    if(afterIdx>=0){
+      for(var j=0;j<sit&&afterIdx+j<chk.length;j++){
+        if(!restMap[chk[afterIdx+j]])restMap[chk[afterIdx+j]]=s.block_name||s.id;
+      }
+    }
+  });
+  return violations;
+}
+
+function doConfirm(){
+  if(SEL.length<2){ toast('Select at least 2 blocks before confirming.',3000); return; }
+  if(!T){ toast('Tournament data unavailable. Refresh and try again.',3000); return; }
+  var violations=checkRestViolations();
+  if(violations.length){
+    toast('Your selection violates rest period rules \u2014 please review the highlighted blocks.',5000);
+    return;
+  }
+  // Server-side signup closed check — re-fetch tournament status before allowing submission
+  supabase.from('tournaments').select('status').eq('id',T.id).limit(1).then(function(r){
+    var row=r.data&&r.data[0];
+    if(row&&row.status==='closed'){
+      toast('Signup is closed for this tournament. Contact your assigner.',5000);
+      var btn=g('sb-confirm-btn');if(btn){btn.textContent='Confirm Schedule';btn.disabled=false;}
+      return;
+    }
+    doConfirmSubmit();
+  });
+}
+function doConfirmSubmit(){
+  var btn=g('sb-confirm-btn');btn.textContent='Saving\u2026';btn.disabled=true;
+
+  // Step 1 - mark blocks as claimed (Supabase client — proxy strips PATCH query strings)
+  var blockPatches=SEL.map(function(b){
+    var clmCount=(CLAIMS_MAP[b.id]||{count:0}).count+1;
+    var needCount=b.officials_needed||(SELDAY&&SELDAY.officials_needed)||T&&T.officials_per_game||2;
+    var newStatus=clmCount>=needCount?'claimed':'open';
+    return supabase.from('available_blocks')
+      .update({status:newStatus,held_by:null,held_until:null})
+      .eq('id',b.id);
+  });
+
+  // Step 2 - write one claims row per block
+  var claimInserts=SEL.map(function(b){
+    return supabase.from('claims').insert({
+      tournament_id: T.id,
+      block_id: b.id,
+      official_name: OFFICIAL?OFFICIAL.name:'',
+      official_email: OFFICIAL?OFFICIAL.email:'',
+      official_phone: OFFICIAL?OFFICIAL.phone:'',
+      official_id: OFFICIAL?OFFICIAL.id:null,
+      status:'confirmed',
+      claimed_at: new Date().toISOString()
+    });
+  });
+
+  // Step 3 - mark invite token as used + status=confirmed
+  var tokenCleanup=[];
+  var tk=new URLSearchParams(window.location.search).get('signup')||new URLSearchParams(window.location.search).get('token');
+  if(tk&&tk.length>20){
+    tokenCleanup.push(
+      supabase.from('invite_tokens').update({used:true,status:'confirmed'}).eq('token',tk)
+    );
+  }
+
+  Promise.all(blockPatches.concat(claimInserts).concat(tokenCleanup))
+    .then(function(results){
+      var failed = results.some(function(r){ return r && r.error; });
+      if (failed) {
+        // Roll back edited blocks to open
+        Promise.all(SEL.map(function(b){
+          return supabase.from('available_blocks')
+            .update({status:'open',held_by:null,held_until:null})
+            .eq('id',b.id);
+        })).finally(function(){
+          btn.textContent='Confirm Schedule'; btn.disabled=false;
+          toast('Confirm failed, your holds were released. Please try again.',6000);
+        });
+        return;
+      }
+      stopTimer();
+      showSuccess();
+    })
+    .catch(function(e){
+      btn.textContent='Confirm Schedule'; btn.disabled=false;
+      toast('Error: '+e.message,6000);
+    });
+}
+
+function showSuccess(){
+  var cg=SEL.reduce(function(a,b){return a+b.game_count;},0);
+  var _pg=T?(parseFloat(T.pay_per_game)||0):0;
+  SEL.forEach(function(b){b.total_pay=b.game_count*_pg;});
+  var pay=SEL.reduce(function(a,b){return a+b.total_pay;},0);
+  var rows=SEL.map(function(b){
+    return '<div class="suc-row">'+
+      '<span style="font-size:14px;"><strong>'+(b.block_name||b.id)+'</strong> &mdash; '+b.court_first+'</span>'+
+      '<span style="font-size:13px;color:#4a7c59;">'+b.start_time+'&ndash;'+b.end_time+'&nbsp;&middot;&nbsp;<strong>$'+(b.total_pay||0)+'</strong></span>'+
+    '</div>';
+  }).join('');
+  var fn=OFFICIAL&&OFFICIAL.name?OFFICIAL.name.split(' ')[0]:'';
+  var nameLine=fn?'<div class="suc-title">You\'re locked in, '+fn+'!</div>':'<div class="suc-title">Confirmed!</div>';
+  var contactLine='';
+  if(OFFICIAL){
+    var hasPhone=OFFICIAL.phone&&OFFICIAL.phone.length>5;
+    var hasEmail=OFFICIAL.email&&OFFICIAL.email.length>3&&!/^test/i.test(OFFICIAL.email);
+    if(hasPhone&&hasEmail){contactLine='A confirmation summary will be sent to your phone and email.';}
+    else if(hasPhone){contactLine='A confirmation summary will be sent to your phone.';}
+    else if(hasEmail){contactLine='A confirmation summary will be sent to your email.';}
+    else{contactLine='Your schedule has been saved.';}
+  } else {
+    contactLine='Your assigner has been notified.';
+  }
+  g('status-bar').style.display='none';
+  g('grid-sect').style.display='none';
+  var tb=g('tip-bar');if(tb)tb.style.display='none';
+  var tipBar=document.querySelector('.tip-bar');if(tipBar)tipBar.style.display='none';
+  g('app').innerHTML=
+    '<div class="success">'+
+    '<div class="suc-icon">&#9989;</div>'+
+    nameLine+
+    '<div class="suc-detail" style="margin-bottom:16px;">'+(T?T.name:'')+'</div>'+
+    '<div class="suc-games">'+rows+
+      '<div style="border-top:1px solid #C3E6CB;margin-top:8px;padding-top:10px;text-align:center;font-size:14px;">'+
+        '<strong>'+cg+' game'+(cg!==1?'s':'')+' &nbsp;&middot;&nbsp; $'+pay+' total</strong>'+
+      '</div>'+
+    '</div>'+
+    '<div class="suc-detail" style="margin-top:20px;font-size:13px;">'+contactLine+'<br><br>'+
+    'Questions? Contact your assigner directly.</div>'+
+    '</div>';
+}
+
+function releaseMyHolds(){
+  if(!SEL||!SEL.length||!SB_URL)return;
+  SEL.forEach(function(b){
+    if(b.status==='held'&&b.held_by===SID){
+      // Use sendBeacon for reliability on page close; no auth header possible, so this is a best-effort release.
+      var url=SB_URL+'/rest/v1/available_blocks?id=eq.'+b.id+'&status=eq.held&held_by=eq.'+SID;
+      var data=JSON.stringify({status:'open',held_by:null,held_until:null});
+      var blob=new Blob([data],{type:'application/json'});
+      navigator.sendBeacon(url, blob);
+    }
+  });
+}
+
+// Release holds when official leaves page without confirming
+window.addEventListener('beforeunload', function(){
+  releaseMyHolds();
+});
+
+// Also release when tab becomes hidden (mobile friendly)
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState==='hidden'){
+    releaseMyHolds();
+  }
+});
+
+function startRT(){
+  // Realtime subscriptions disabled from client to avoid embedding Supabase realtime key.
+  // Use slow polling fallback for updates.
+  startPoll();
+}
+function startPoll(){
+  if (pollInterval) clearInterval(pollInterval);
+  pollInterval = setInterval(function(){
+    if(!T)return;
+    supabase.from('available_blocks')
+      .select('id,status,held_by,held_until')
+      .eq('tournament_id',T.id)
+      .then(function(result){
+        if(result.error||!result.data)return;
+        var ch=false;
+        result.data.forEach(function(rec){
+          var b=BLKS.find(function(x){return x.id===rec.id;});
+          if(b&&b.held_by!==SID&&(b.status!==rec.status||b.held_by!==rec.held_by)){
+            b.status=rec.status;b.held_by=rec.held_by;b.held_until=rec.held_until;ch=true;
+          }
+        });
+        if(ch)renderGrid();
+      });
+  },30000);
+}
+
+function openHelpModal(){
+  var m=document.getElementById('help-modal');
+  if(m)m.style.display='block';
+  document.body.style.overflow='hidden';
+}
+function closeHelpModal(){
+  var m=document.getElementById('help-modal');
+  if(m)m.style.display='none';
+  document.body.style.overflow='';
+}
+function showErr(msg){g('app').innerHTML='<div class="err-box"><div style="font-size:30px;margin-bottom:12px">&#9888;</div>'+msg+'</div>';}
+</script>
+</body>
+</html>

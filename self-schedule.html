@@ -1030,6 +1030,30 @@ function doConfirmSubmit(){
       }
       stopTimer();
       showSuccess();
+      // Send confirmation email to official
+      if(OFFICIAL && OFFICIAL.email && !/^test/i.test(OFFICIAL.email)) {
+        var _pg = T ? (parseFloat(T.pay_per_game) || 0) : 0;
+        fetch('/.netlify/functions/send-confirmation', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            official_name:  OFFICIAL.name,
+            official_email: OFFICIAL.email,
+            tournament_name: T.name,
+            tournament_date: T.date || T.start_date,
+            blocks: SEL.map(function(b){ return {
+              block_name: b.block_name || b.id,
+              court: b.court_first,
+              start_time: b.start_time,
+              end_time: b.end_time,
+              game_count: b.game_count,
+              total_pay: b.game_count * _pg
+            };}),
+            total_games: SEL.reduce(function(a,b){return a+b.game_count;},0),
+            total_pay: SEL.reduce(function(a,b){return a+b.game_count*_pg;},0)
+          })
+        }).catch(function(){});
+      }
     })
     .catch(function(e){
       btn.textContent='Confirm Schedule'; btn.disabled=false;

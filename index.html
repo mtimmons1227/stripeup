@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -165,7 +165,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
         <button class="btn btn-gold btn-full" onclick="doLogin()" id="lin-btn">Sign In</button>
         <div style="margin-top:12px;font-size:12px;color:#6B7A99">
           <a href="#" onclick="showForgotPassword();return false;" style="color:#C9A84C">Forgot password?</a>
-          &nbsp;Â·&nbsp; No account? <a href="#" onclick="showSignup()" style="color:#C9A84C">Create one</a>
+          &nbsp;&middot;&nbsp; No account? <a href="#" onclick="showSignup()" style="color:#C9A84C">Create one</a>
         </div>
       </div>
       <!-- Forgot-password fields (hidden by default) -->
@@ -1142,7 +1142,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
     </div>
     <!-- Summary bar (populated by JS) -->
     <div id="responses-summary-bar" style="background:#0E1C35;padding:10px 20px;flex-shrink:0;border-bottom:1px solid #1B2A4A">
-      <div style="color:#8A9BB8;font-size:12px">Loadingâ€¦</div>
+      <div style="color:#8A9BB8;font-size:12px">Loading&hellip;</div>
     </div>
     <!-- Scrollable court list -->
     <div id="responses-content" style="flex:1;overflow-y:auto;background:#F8F9FC"></div>
@@ -1764,7 +1764,7 @@ function loadTournamentStats(tid) {
           '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';flex-shrink:0"></span>' +
           '<span style="color:#1B2A4A;font-weight:600">' + c + '</span>' +
           '<span style="color:#6B7A99;font-size:11px">' + m.filled + '/' + m.needed +
-            (m.games ? ' &nbsp;Â·&nbsp; <span style="color:#1B2A4A;font-weight:500">' + m.games + ' games</span>' : '') +
+            (m.games ? ' &nbsp;&middot;&nbsp; <span style="color:#1B2A4A;font-weight:500">' + m.games + ' games</span>' : '') +
           '</span>' +
           '</div>';
       }).join('');
@@ -1795,23 +1795,23 @@ function loadTournamentStats(tid) {
       var invitesSent = tokenCount > 0 || slotsFilled > 0;
 
       if (gamesCount === 0) {
-        cards.push({color:'#C9A84C',bg:'#FEF3DC',bdr:'#FAC775',icon:'ðŸ“¥',msg:'Import games to get started'});
+        cards.push({color:'#C9A84C',bg:'#FEF3DC',bdr:'#FAC775',icon:'&#9654;',msg:'Import games to get started'});
       } else if (blks.length === 0) {
-        cards.push({color:'#C9A84C',bg:'#FEF3DC',bdr:'#FAC775',icon:'ðŸ“‹',msg:'Review blocks to confirm layout'});
+        cards.push({color:'#C9A84C',bg:'#FEF3DC',bdr:'#FAC775',icon:'&#9654;',msg:'Review blocks to confirm layout'});
       } else if (!invitesSent) {
-        cards.push({color:'#1B2A4A',bg:'#EDF1F8',bdr:'#C0CBDC',icon:'âœ‰ï¸',msg:'Send invitations to officials'});
+        cards.push({color:'#1B2A4A',bg:'#EDF1F8',bdr:'#C0CBDC',icon:'&#9993;',msg:'Send invitations to officials'});
       } else if (uniqueOfficials === 0 && tokenCount > 0) {
-        cards.push({color:'#C0392B',bg:'#FDECEA',bdr:'#E8A09A',icon:'âš ï¸',msg:'No officials responded yet'});
+        cards.push({color:'#C0392B',bg:'#FDECEA',bdr:'#E8A09A',icon:'&#9888;',msg:'No officials responded yet'});
       }
 
       if (slotsOpen > 0 && invitesSent) {
-        cards.push({color:'#C0392B',bg:'#FDECEA',bdr:'#E8A09A',icon:'ðŸ“¬',msg:'Send reminder â€” ' + slotsOpen + ' slot' + (slotsOpen!==1?'s':'') + ' unclaimed',onclick:'openInviteModal(\'' + tid + '\')'});
+        cards.push({color:'#C0392B',bg:'#FDECEA',bdr:'#E8A09A',icon:'&#9993;',msg:'Send reminder &mdash; ' + slotsOpen + ' slot' + (slotsOpen!==1?'s':'') + ' unclaimed',onclick:'openInviteModal(\'' + tid + '\''+ ')'});
       }
 
       if (pct >= 100) {
-        cards.push({color:'#1A7A4A',bg:'#EAF3DE',bdr:'#97C459',icon:'âœ…',msg:'Fully staffed â€” you\'re on track!'});
+        cards.push({color:'#1A7A4A',bg:'#EAF3DE',bdr:'#97C459',icon:'&#10003;',msg:'Fully staffed &mdash; you&rsquo;re on track!'});
       } else if (pct >= 50) {
-        cards.push({color:'#1A7A4A',bg:'#EAF3DE',bdr:'#97C459',icon:'ðŸ‘',msg:'On track â€” ' + pct + '% staffed'});
+        cards.push({color:'#1A7A4A',bg:'#EAF3DE',bdr:'#97C459',icon:'&#10003;',msg:'On track &mdash; ' + pct + '% staffed'});
       }
 
       el.innerHTML = cards.map(function(c) {
@@ -1966,7 +1966,7 @@ function renderTournCard(t, nested) {
             '<span class="badge ' + statusCls + '" style="font-size:10px">' + statusLabel + '</span>' +
             modeBadge + daysBadge +
           '</div>' +
-          '<div class="tourn-meta">' + (t.date||'') + ' Â· ' + (t.location||'') + ' Â· ' + t.courts + ' courts Â· ' + t.officials_per_game + ' off/game' + (t.pay_per_game ? ' Â· $' + t.pay_per_game + '/game' : '') + '</div>' +
+          '<div class="tourn-meta">' + (t.date||'') + ' &middot; ' + (t.location||'') + ' &middot; ' + t.courts + ' courts &middot; ' + t.officials_per_game + ' off/game' + (t.pay_per_game ? ' &middot; $' + t.pay_per_game + '/game' : '') + '</div>' +
           '<div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">' +
             '<span id="hdr-games-' + t.id + '" style="font-size:10px;padding:2px 8px;border-radius:10px;background:#F4F6F9;color:#6B7A99;border:1px solid #E0E6F0">No games</span>' +
             '<span id="hdr-resp-' + t.id + '" style="font-size:10px;padding:2px 8px;border-radius:10px;background:#F4F6F9;color:#6B7A99;border:1px solid #E0E6F0">0 responses</span>' +
@@ -2013,12 +2013,12 @@ function renderTournCard(t, nested) {
             '<div style="background:#E0E6F0;border-radius:4px;height:8px;overflow:hidden;margin-bottom:6px">' +
               '<div id="staffing-bar-' + t.id + '" style="height:100%;background:#1A7A4A;width:0%;border-radius:4px;transition:width .6s"></div>' +
             '</div>' +
-            '<div id="staffing-summary-' + t.id + '" style="font-size:11px;color:#6B7A99;margin-bottom:14px">Loading staffing dataâ€¦</div>' +
+            '<div id="staffing-summary-' + t.id + '" style="font-size:11px;color:#6B7A99;margin-bottom:14px">Loading staffing data&hellip;</div>' +
 
             // COURT BREAKDOWN
             '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#8A9BB8;margin-bottom:8px">Court Breakdown</div>' +
             '<div id="court-list-' + t.id + '" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-bottom:6px">' +
-              '<div style="font-size:12px;color:#6B7A99;font-style:italic">Loadingâ€¦</div>' +
+              '<div style="font-size:12px;color:#6B7A99;font-style:italic">Loading&hellip;</div>' +
             '</div>' +
             '<div id="court-summary-' + t.id + '" style="font-size:11px;color:#6B7A99"></div>' +
           '</div>' +
@@ -2041,19 +2041,19 @@ function renderTournCard(t, nested) {
             '<div style="background:#F4F6F9;border-radius:10px;padding:12px 10px;border:1px solid #E0E6F0">' +
               '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#8A9BB8;margin-bottom:6px">Pay Estimate</div>' +
               '<div style="font-size:12px;color:#6B7A99;margin-bottom:3px">' + payDisplay + ' &times; ' + opg + ' off/game</div>' +
-              '<div id="pay-estimate-' + t.id + '" style="font-size:16px;font-weight:800;color:#C9A84C">Loadingâ€¦</div>' +
+              '<div id="pay-estimate-' + t.id + '" style="font-size:16px;font-weight:800;color:#C9A84C">Loading&hellip;</div>' +
               '<div style="font-size:10px;color:#6B7A99;margin-top:2px">total payout est.</div>' +
             '</div>' +
 
             // Action cards
             '<div id="action-cards-' + t.id + '">' +
-              '<div style="font-size:11px;color:#6B7A99;font-style:italic">Loadingâ€¦</div>' +
+              '<div style="font-size:11px;color:#6B7A99;font-style:italic">Loading&hellip;</div>' +
             '</div>' +
 
           '</div>' + // end right sidebar
         '</div>' + // end two-column body
 
-        // â”€â”€ QUICK ACTIONS ROW â€” order: Edit Â· Import Games Â· Review Blocks Â· Send Invitations Â· View Responses Â· Copy Link Â· Close Signup Â· Cancel Â· Delete â”€â”€
+        // â”€â”€ QUICK ACTIONS ROW â€” order: Edit &middot; Import Games &middot; Review Blocks &middot; Send Invitations &middot; View Responses &middot; Copy Link &middot; Close Signup &middot; Cancel &middot; Delete â”€â”€
         '<div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #E0E6F0">' +
           (t.status !== 'archived' ?
             '<button class="btn btn-out btn-sm" style="color:#C9A84C;border-color:#C9A84C" onclick="openEditTournament(\'' + t.id + '\');event.stopPropagation()">Edit</button>' : '') +
@@ -2284,7 +2284,7 @@ function doSendSchedules() {
   var btn    = document.getElementById('send-schedules-btn');
   var bodyEl = document.getElementById('send-schedules-body');
   btn.disabled = true;
-  btn.textContent = 'Sendingâ€¦';
+  btn.textContent = 'Sending&hellip;';
   fetch('/.netlify/functions/send-schedules', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -2883,7 +2883,7 @@ function createTournament() {
     // Single tournament â€” original behavior
     var code = name.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 6).toUpperCase();
     var data = Object.assign({}, baseData, { name: name, date: date, signup_code: code });
-    if (btn) { btn.textContent = 'Creatingâ€¦'; btn.disabled = true; }
+    if (btn) { btn.textContent = 'Creating&hellip;'; btn.disabled = true; }
     supabase.from('tournaments').insert(data).then(function(result) {
       if (btn) { btn.textContent = 'Create Tournament'; btn.disabled = false; }
       if (result.error) { err.textContent = 'Failed: ' + result.error.message; err.style.display = 'block'; return; }
@@ -2909,7 +2909,7 @@ function createTournament() {
     dayNames.push(dayName);
   }
 
-  if (btn) { btn.textContent = 'Creatingâ€¦'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Creating&hellip;'; btn.disabled = true; }
   var createdIds = [];
 
   function insertNext(idx) {
@@ -2944,8 +2944,8 @@ function viewAvailability(tid) {
   var tname = tourn ? tourn.name : 'Tournament';
 
   document.getElementById('responses-modal-title').textContent = tname;
-  document.getElementById('responses-summary-bar').innerHTML = '<div style="color:#8A9BB8;font-size:12px">Loadingâ€¦</div>';
-  document.getElementById('responses-content').innerHTML = '<div style="text-align:center;padding:40px;font-size:14px;color:#6B7A99">Loadingâ€¦</div>';
+  document.getElementById('responses-summary-bar').innerHTML = '<div style="color:#8A9BB8;font-size:12px">Loading&hellip;</div>';
+  document.getElementById('responses-content').innerHTML = '<div style="text-align:center;padding:40px;font-size:14px;color:#6B7A99">Loading&hellip;</div>';
 
   // Wire footer buttons
   var sendBtn = document.getElementById('resp-send-invite-btn');
@@ -5792,7 +5792,7 @@ function resendToOfficial(officialId, tid, evt) {
   var tourn = (G.allTournaments||[]).find(function(t){return t.id===tid;});
   if (!tourn) { alert('Tournament not found.'); return; }
   var btn = evt && evt.target;
-  if (btn) { btn.disabled=true; btn.textContent='Sendingâ€¦'; }
+  if (btn) { btn.disabled=true; btn.textContent='Sending&hellip;'; }
   fetch('/api/send-invites', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -6225,5 +6225,3 @@ function changePassword(){
 </script>
 </body>
 </html>
-
-

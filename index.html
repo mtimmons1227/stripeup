@@ -233,9 +233,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <div id="rst-criteria" style="background:#F4F6F9;border:1px solid #D1D9E6;border-radius:6px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.8">
         <div style="font-weight:700;color:#1B2A4A;margin-bottom:4px">Password must contain:</div>
         <div id="rc-len"  style="color:#6B7A99">&#9675; At least 8 characters</div>
-        <div id="rc-upper" style="color:#6B7A99">&#9675; One uppercase letter (Aâ€“Z)</div>
-        <div id="rc-lower" style="color:#6B7A99">&#9675; One lowercase letter (aâ€“z)</div>
-        <div id="rc-num"  style="color:#6B7A99">&#9675; One number (0â€“9)</div>
+        <div id="rc-upper" style="color:#6B7A99">&#9675; One uppercase letter (A&ndash;Z)</div>
+        <div id="rc-lower" style="color:#6B7A99">&#9675; One lowercase letter (a&ndash;z)</div>
+        <div id="rc-num"  style="color:#6B7A99">&#9675; One number (0&ndash;9)</div>
         <div id="rc-spec" style="color:#6B7A99">&#9675; One special character (!@#$%^&amp;*)</div>
       </div>
       <div class="form-row" style="text-align:left">
@@ -261,7 +261,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <span class="pill" id="opill" style="background:#1B2A4A;color:#8A9BB8;border:1px solid #2E4170;padding:3px 10px;border-radius:10px;font-size:11px" title="Officials in your roster"><span id="opill-count">...</span> officials</span>
       <span class="pill" id="spill" style="background:#1B2A4A;color:#8A9BB8;border:1px solid #2E4170;padding:3px 10px;border-radius:10px;font-size:11px" title="Officials who confirmed blocks"><span id="spill-count">...</span> confirmed</span>
       <span id="demo-badge" style="display:none;background:#92400E;color:#FDE68A;border:1px solid #C9A84C;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.5px">DEMO</span>
-      <button class="btn btn-out" id="demo-toggle-btn" style="font-size:12px;padding:6px 12px;color:#8A9BB8;border-color:#2E4170" onclick="toggleDemoMode()" title="Toggle Demo Mode â€” no real emails sent">Demo Mode</button>
+      <button class="btn btn-out" id="demo-toggle-btn" style="font-size:12px;padding:6px 12px;color:#8A9BB8;border-color:#2E4170" onclick="toggleDemoMode()" title="Toggle Demo Mode &mdash; no real emails sent">Demo Mode</button>
       <button class="btn btn-gold" style="font-size:12px;padding:6px 12px" onclick="openModal('sub-modal')">+ Sub Request</button>
       <button class="btn btn-out" style="font-size:12px;padding:6px 12px;color:#8A9BB8;border-color:#2E4170" onclick="openModal('chgpwd-modal')">Change Password</button>
       <button class="btn btn-out" style="font-size:12px;padding:6px 12px;color:#8A9BB8;border-color:#2E4170;display:none" onclick="toggleDebug()" id="dbg-toggle-btn" title="Toggle debug info">Dev</button>
@@ -320,14 +320,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <button id="pool-btn-mine" onclick="switchPoolView('mine')" style="padding:6px 14px;font-size:11px;font-weight:700;border:none;border-radius:6px;cursor:pointer;background:transparent;color:#6B7A99;font-family:Arial">My Pool</button>
     </div>
   </div>
-  <div style="font-size:13px;color:#6B7A99;margin-bottom:18px">Platform-wide roster â€” officials work across all assigners. Load once, invite to any tournament.</div>
+  <div style="font-size:13px;color:#6B7A99;margin-bottom:18px">Platform-wide roster &mdash; officials work across all assigners. Load once, invite to any tournament.</div>
 
   <div class="g2" style="margin-bottom:20px;align-items:start">
 
     <!-- BULK IMPORT -->
     <div class="card" style="border-top:3px solid #C9A84C">
       <div style="font-size:14px;font-weight:700;margin-bottom:4px">Bulk Import</div>
-      <div style="font-size:12px;color:#6B7A99;margin-bottom:12px;line-height:1.6">Load hundreds of officials from a CSV file. Deduplicates by email â€” safe to run multiple times.</div>
+      <div style="font-size:12px;color:#6B7A99;margin-bottom:12px;line-height:1.6">Load hundreds of officials from a CSV file. Deduplicates by email &mdash; safe to run multiple times.</div>
       <div style="background:#F4F6F9;border-radius:6px;padding:8px 10px;font-family:monospace;font-size:11px;color:#1B2A4A;margin-bottom:12px">name, email, phone, sport, certification</div>
       <div id="bulk-drop" style="border:2px dashed #D1D9E6;border-radius:8px;padding:18px;text-align:center;font-size:12px;color:#6B7A99;margin-bottom:10px;background:#F4F6F9;cursor:pointer"
         onclick="document.getElementById('bulk-file').click()"
@@ -455,7 +455,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
 
 <div class="panel" id="tab-scheduler">
     <div id="dev-mode-banner" style="display:none;background:repeating-linear-gradient(45deg,#B8960A,#B8960A 10px,#0E1C35 10px,#0E1C35 20px);color:#fff;font-weight:800;font-size:13px;text-align:center;padding:10px 16px;border-radius:8px;margin-bottom:16px;letter-spacing:.5px">
-      âš™ DEV MODE ACTIVE &mdash; Results use mock data only. Do not save to production tournaments.
+      &#9881; DEV MODE ACTIVE &mdash; Results use mock data only. Do not save to production tournaments.
     </div>
     <div style="font-size:19px;font-weight:800;margin-bottom:16px">Run Scheduler</div>
     <div class="g2">
@@ -625,17 +625,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       </div>
     </div>
 
-    <!-- Warning box â€” shown when disabling -->
+    <!-- Warning box &mdash; shown when disabling -->
     <div id="disable-warning" style="background:#FDECEA;border:2px solid #C0392B;border-radius:8px;padding:14px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;color:#C0392B;margin-bottom:8px">âš  Platform-Wide Action</div>
+      <div style="font-size:13px;font-weight:700;color:#C0392B;margin-bottom:8px">&#9888; Platform-Wide Action</div>
       <div style="font-size:12px;color:#922B21;line-height:1.7">
         Disabling this official will <strong>remove them from the entire StripeUp platform</strong>.<br/>
         They will <strong>not be schedulable by ANY assigner</strong> until re-enabled.<br/>
-        This is a serious action â€” use only for platform violations, fraud, or revoked certification.
+        This is a serious action &mdash; use only for platform violations, fraud, or revoked certification.
       </div>
     </div>
 
-    <!-- Enable info box â€” shown when re-enabling -->
+    <!-- Enable info box &mdash; shown when re-enabling -->
     <div id="enable-info" style="display:none;background:#E8F5EE;border:2px solid #1A7A4A;border-radius:8px;padding:14px;margin-bottom:16px">
       <div style="font-size:13px;font-weight:700;color:#1A7A4A;margin-bottom:8px">Re-enabling Official</div>
       <div style="font-size:12px;color:#085041;line-height:1.7">
@@ -740,10 +740,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <div style="font-size:11px;font-weight:700;color:#6B7A99;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Officials who will receive this invitation</div>
       <div id="invite-filter-summary" style="background:#F4F6F9;border-radius:8px;padding:12px 14px;font-size:12px;color:#1B2A4A">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div>Active officials only <span style="color:#1A7A4A;font-weight:700">âœ“</span></div>
-          <div>Not scratched by you <span style="color:#1A7A4A;font-weight:700">âœ“</span></div>
-          <div id="invite-rank-filter">Min rank: Level 1+ <span style="color:#1A7A4A;font-weight:700">âœ“</span></div>
-          <div id="invite-sport-filter">Sport: Basketball <span style="color:#1A7A4A;font-weight:700">âœ“</span></div>
+          <div>Active officials only <span style="color:#1A7A4A;font-weight:700">&#10003;</span></div>
+          <div>Not scratched by you <span style="color:#1A7A4A;font-weight:700">&#10003;</span></div>
+          <div id="invite-rank-filter">Min rank: Level 1+ <span style="color:#1A7A4A;font-weight:700">&#10003;</span></div>
+          <div id="invite-sport-filter">Sport: Basketball <span style="color:#1A7A4A;font-weight:700">&#10003;</span></div>
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid #D1D9E6;display:flex;align-items:center;justify-content:space-between">
           <span style="font-weight:700;font-size:14px;color:#1B2A4A">Estimated recipients:</span>
@@ -791,7 +791,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
   <div class="modal" style="width:420px">
     <button class="modal-close" onclick="closeModal('rank-modal')">x</button>
     <div class="modal-title">Set Official Rank</div>
-    <div class="alert alert-info" style="margin-bottom:14px"><span>i</span><span>Rank is admin-only â€” officials do not see this. It controls which tournament invitations they receive.</span></div>
+    <div class="alert alert-info" style="margin-bottom:14px"><span>i</span><span>Rank is admin-only &mdash; officials do not see this. It controls which tournament invitations they receive.</span></div>
     <div id="rank-official-name" style="font-weight:700;font-size:14px;margin-bottom:14px;color:#1B2A4A;padding:10px 12px;background:#F4F6F9;border-radius:8px"></div>
     <div class="form-row" style="margin-bottom:10px">
       <label class="form-lbl">Rank Level</label>
@@ -839,7 +839,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <textarea id="scratch-reason" style="width:100%;height:70px;padding:8px 10px;font-size:12px;border:1px solid #D1D9E6;border-radius:7px;resize:vertical;font-family:inherit" placeholder="e.g. No-show at last tournament, conflict of interest..."></textarea>
     </div>
 
-    <!-- Notify toggle â€” only shown when scratching (not restoring) -->
+    <!-- Notify toggle &mdash; only shown when scratching (not restoring) -->
     <div id="scratch-notify-row" style="margin-bottom:16px;padding:12px 14px;background:#F4F6F9;border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div>
         <div style="font-size:13px;font-weight:700;color:#1B2A4A">Notify official?</div>
@@ -873,8 +873,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
     <div class="alert alert-info" style="margin-bottom:14px">
   <span>i</span>
   <span>
-    <b>Games</b> are tournament-specific â€” import the court schedule CSV here.<br/>
-    <b>Officials</b> are platform-wide â€” they respond via the signup link.<br/>
+    <b>Games</b> are tournament-specific &mdash; import the court schedule CSV here.<br/>
+    <b>Officials</b> are platform-wide &mdash; they respond via the signup link.<br/>
     Once games are imported and officials respond, click Proceed to Scheduler.
   </span>
 </div>
@@ -996,11 +996,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <div class="form-row">
         <label class="form-lbl">Minimum Official Rank</label>
         <select id="et-minrank">
-          <option value="1">Level 1 â€” Entry</option>
-          <option value="2">Level 2 â€” Developing</option>
-          <option value="3">Level 3 â€” Certified</option>
-          <option value="4">Level 4 â€” Advanced</option>
-          <option value="5">Level 5 â€” Elite only</option>
+          <option value="1">Level 1 &mdash; Entry</option>
+          <option value="2">Level 2 &mdash; Developing</option>
+          <option value="3">Level 3 &mdash; Certified</option>
+          <option value="4">Level 4 &mdash; Advanced</option>
+          <option value="5">Level 5 &mdash; Elite only</option>
         </select>
       </div>
     </div>
@@ -1075,11 +1075,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <div class="form-row">
         <label class="form-lbl">Minimum Official Rank</label>
         <select id="tn-minrank">
-          <option value="1">Level 1 â€” Entry (any official)</option>
-          <option value="2">Level 2 â€” Developing</option>
-          <option value="3">Level 3 â€” Certified</option>
-          <option value="4">Level 4 â€” Advanced</option>
-          <option value="5">Level 5 â€” Elite only</option>
+          <option value="1">Level 1 &mdash; Entry (any official)</option>
+          <option value="2">Level 2 &mdash; Developing</option>
+          <option value="3">Level 3 &mdash; Certified</option>
+          <option value="4">Level 4 &mdash; Advanced</option>
+          <option value="5">Level 5 &mdash; Elite only</option>
         </select>
       </div>
     </div>
@@ -1159,13 +1159,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 //    CONFIG
 var SUPA_URL = '/.netlify/functions/supabase-proxy';
-// Anon key is a publishable/public key â€” safe for frontend (scoped by RLS, not a secret)
+// Anon key is a publishable/public key &mdash; safe for frontend (scoped by RLS, not a secret)
 var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xYnhxdHNuZnpjbW16cGJyeG54Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5NDU0OTMsImV4cCI6MjA4OTUyMTQ5M30.BOYz-2OjGo9LYaoHUrmgp_AsaU6nlAPmK3QGiwV7J1g';
-// Capture hash BEFORE createClient â€” the SDK clears it when it processes a token
+// Capture hash BEFORE createClient &mdash; the SDK clears it when it processes a token
 var _hadHashOnLoad = window.location.hash.includes('access_token');
 var supabase = window.supabase.createClient('https://mqbxqtsnfzcmmzpbrxnx.supabase.co', SUPA_ANON_KEY);
-// RESEND_KEY removed â€” invitations handled server-side via Netlify function
-var RESEND_KEY = ''; // kept for cancellation emails only â€” set via Netlify env if needed
+// RESEND_KEY removed &mdash; invitations handled server-side via Netlify function
+var RESEND_KEY = ''; // kept for cancellation emails only &mdash; set via Netlify env if needed
 
 //    STATE                                                             
 var G = {
@@ -1217,16 +1217,16 @@ function toggleDebug() {
     btn.textContent = G_DEV_ON ? 'Dev ON' : 'Dev';
   }
   if (G_DEV_ON) {
-    dm('Dev ON â€” debug enabled');
+    dm('Dev ON &mdash; debug enabled');
     if (G.games.length > 0 && G.officials.length === 0) {
       seedDevOfficials();
-      dm('Dev ON â€” seeded ' + G.officials.length + ' mock officials');
+      dm('Dev ON &mdash; seeded ' + G.officials.length + ' mock officials');
     }
   } else {
     var hadMock = G.officials.some(function(o){ return String(o.id).indexOf('DEV') === 0; });
     if (hadMock) {
       G.officials = G.officials.filter(function(o){ return String(o.id).indexOf('DEV') !== 0; });
-      dm('Dev OFF â€” mock officials cleared');
+      dm('Dev OFF &mdash; mock officials cleared');
       if (typeof updatePreRun === 'function') updatePreRun();
     }
   }
@@ -1375,8 +1375,8 @@ function checkPwdStrength() {
   var v = document.getElementById('rst-pass').value;
   function mark(id, pass) {
     var el = document.getElementById(id);
-    if (pass) { el.style.color = '#1A7A4A'; el.innerHTML = el.innerHTML.replace('&#9675;', '&#9679;').replace('â—‹', 'â—'); }
-    else       { el.style.color = '#6B7A99'; el.innerHTML = el.innerHTML.replace('&#9679;', '&#9675;').replace('â—', 'â—‹'); }
+    if (pass) { el.style.color = '#1A7A4A'; el.innerHTML = el.innerHTML.replace('&#9675;', '&#9679;').replace('&#9675;', '&#9679;'); }
+    else       { el.style.color = '#6B7A99'; el.innerHTML = el.innerHTML.replace('&#9679;', '&#9675;').replace('&#9679;', '&#9675;'); }
   }
   mark('rc-len',   v.length >= 8);
   mark('rc-upper', /[A-Z]/.test(v));
@@ -1398,7 +1398,7 @@ function doPasswordReset() {
   if (pass !== pass2) { err.textContent = 'Passwords do not match.'; err.style.display = 'block'; return; }
   btn.innerHTML = '<span class="spin"></span> Saving...';
   btn.disabled = true;
-  // Use SDK directly â€” the proxy strips user tokens, which breaks recovery auth
+  // Use SDK directly &mdash; the proxy strips user tokens, which breaks recovery auth
   supabase.auth.updateUser({ password: pass }).then(function(result) {
     if (result.error) {
       err.textContent = result.error.message || 'Failed to update password.';
@@ -1471,7 +1471,7 @@ function toggleDemoMode() {
   var on = !isDemoMode();
   localStorage.setItem('demoMode', on ? '1' : '0');
   applyDemoModeUI();
-  showToast(on ? 'Demo Mode ON â€” no real emails will be sent' : 'Demo Mode OFF', on ? '#C9A84C' : '#1A7A4A');
+  showToast(on ? 'Demo Mode ON &mdash; no real emails will be sent' : 'Demo Mode OFF', on ? '#C9A84C' : '#1A7A4A');
 }
 
 function applyDemoModeUI() {
@@ -1590,7 +1590,7 @@ function updateNavCounts() {
   // Use in-memory tournament list to scope games/claims to this org's active tournaments
   var tournIds = (G.allTournaments || G.tournaments || []).map(function(t){return t.id;});
 
-  // Games count â€” scoped to org's tournaments (games table has no org_id column)
+  // Games count &mdash; scoped to org's tournaments (games table has no org_id column)
   var gEl = document.getElementById('gpill-count');
   if (!tournIds.length) {
     if (gEl) gEl.textContent = 0;
@@ -1602,7 +1602,7 @@ function updateNavCounts() {
       }).catch(function(){});
   }
 
-  // Officials count â€” scoped to this org
+  // Officials count &mdash; scoped to this org
   sbFetch('/rest/v1/officials?org_id=eq.' + pid + '&select=id', {method:'GET'})
     .then(function(r){return r.json();})
     .then(function(d){
@@ -1610,7 +1610,7 @@ function updateNavCounts() {
       if(el)el.textContent=Array.isArray(d)?d.length:0;
     }).catch(function(){});
 
-  // Confirmed slots â€” scoped to org's tournaments (claims has no org_id column)
+  // Confirmed slots &mdash; scoped to org's tournaments (claims has no org_id column)
   var sEl = document.getElementById('spill-count');
   if (!tournIds.length) {
     if (sEl) { sEl.textContent = 0; sEl.parentElement.style.color = ''; }
@@ -1658,11 +1658,11 @@ function loadTournamentStats(tid) {
     var pctColor = pct >= 100 ? '#1A7A4A' : pct > 0 ? '#C9A84C' : '#6B7A99';
     var el;
     el = document.getElementById('tile-pct-' + tid);
-    if (el) { el.textContent = totalNeeded > 0 ? pct + '%' : 'â€”'; el.style.color = pctColor; }
+    if (el) { el.textContent = totalNeeded > 0 ? pct + '%' : '&mdash;'; el.style.color = pctColor; }
     el = document.getElementById('tile-confirmed-' + tid);
     if (el) { el.textContent = slotsFilled; el.style.color = slotsFilled > 0 ? '#1A7A4A' : '#6B7A99'; }
     el = document.getElementById('tile-open-' + tid);
-    if (el) { el.textContent = totalNeeded > 0 ? slotsOpen : 'â€”'; el.style.color = slotsOpen > 0 ? '#C0392B' : '#1A7A4A'; }
+    if (el) { el.textContent = totalNeeded > 0 ? slotsOpen : '&mdash;'; el.style.color = slotsOpen > 0 ? '#C0392B' : '#1A7A4A'; }
     el = document.getElementById('tile-responded-' + tid);
     if (el) { el.textContent = uniqueOfficials; el.style.color = uniqueOfficials > 0 ? '#1B2A4A' : '#6B7A99'; }
 
@@ -1714,14 +1714,14 @@ function loadTournamentStats(tid) {
       el.style.background = sb; el.style.color = sc; el.style.borderColor = sbd;
     }
 
-    // â”€â”€ IMPORT GAMES BUTTON â€” disable when games already imported â”€â”€
+    // â”€â”€ IMPORT GAMES BUTTON &mdash; disable when games already imported â”€â”€
     el = document.getElementById('btn-import-' + tid);
     if (el) {
       if (gamesCount > 0) {
         el.disabled = true;
         el.style.opacity = '0.45';
         el.style.cursor = 'not-allowed';
-        el.title = 'Games already imported â€” delete tournament to re-import.';
+        el.title = 'Games already imported &mdash; delete tournament to re-import.';
         el.onclick = function(e) { e.stopPropagation(); };
       } else {
         el.disabled = false;
@@ -1777,14 +1777,14 @@ function loadTournamentStats(tid) {
         courtSumEl.innerHTML = parts.join(' &nbsp;&middot;&nbsp; ') || '&nbsp;';
       }
     } else if (courtEl) {
-      courtEl.innerHTML = '<div style="font-size:12px;color:#6B7A99;font-style:italic;grid-column:1/-1">No blocks yet â€” import games and review blocks first.</div>';
+      courtEl.innerHTML = '<div style="font-size:12px;color:#6B7A99;font-style:italic;grid-column:1/-1">No blocks yet &mdash; import games and review blocks first.</div>';
       if (courtSumEl) courtSumEl.textContent = '';
     }
 
     // â”€â”€ PAY ESTIMATE â”€â”€
     el = document.getElementById('pay-estimate-' + tid);
     if (el) {
-      el.textContent = ppg > 0 && gamesCount > 0 ? '$' + (totalPay).toLocaleString() : 'â€”';
+      el.textContent = ppg > 0 && gamesCount > 0 ? '$' + (totalPay).toLocaleString() : '&mdash;';
       if (gamesCount > 0 && ppg > 0) el.title = gamesCount + ' games Ã— ' + opg + ' off/game Ã— $' + ppg;
     }
 
@@ -1819,7 +1819,7 @@ function loadTournamentStats(tid) {
         var handler   = c.onclick ? ' onclick="'+c.onclick+'" role="button" tabindex="0"' : '';
         return '<div'+handler+' style="background:'+c.bg+';border:1px solid '+c.bdr+';border-radius:8px;padding:8px 10px;display:flex;align-items:flex-start;gap:7px;font-size:12px;color:'+c.color+';margin-bottom:6px;font-weight:600;'+clickable+'">' +
           '<span style="flex-shrink:0">'+c.icon+'</span><span>'+c.msg+'</span></div>';
-      }).join('') || '<div style="font-size:11px;color:#6B7A99;font-style:italic">â€”</div>';
+      }).join('') || '<div style="font-size:11px;color:#6B7A99;font-style:italic">&mdash;</div>';
     }
 
   }).catch(function() {});
@@ -1828,7 +1828,7 @@ function loadTournamentStats(tid) {
 // â”€â”€ Series grouping helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Returns {baseName, dayLabel} if the name contains a day/series suffix, else null.
-// Matches patterns like "Name â€” Friday", "Name - Day 2", "Name Saturday", "Name Week 3"
+// Matches patterns like "Name &mdash; Friday", "Name - Day 2", "Name Saturday", "Name Week 3"
 function detectSeriesInfo(name) {
   var dayWords = 'monday|tuesday|wednesday|thursday|friday|saturday|sunday';
   var patterns = [
@@ -2037,7 +2037,7 @@ function renderTournCard(t, nested) {
             '<span id="hdr-sched-' + t.id + '" style="font-size:10px;padding:2px 8px;border-radius:10px;background:#F4F6F9;color:#6B7A99;border:1px solid #E0E6F0;display:inline-block">No games yet</span>' +
           '</div>' +
         '</div>' +
-        '<div style="font-size:18px;color:' + (isSelected ? '#C9A84C' : '#D1D9E6') + ';font-weight:700;padding-left:8px;flex-shrink:0">' + (isSelected ? 'â–¾' : 'â–¸') + '</div>' +
+        '<div style="font-size:18px;color:' + (isSelected ? '#C9A84C' : '#D1D9E6') + ';font-weight:700;padding-left:8px;flex-shrink:0">' + (isSelected ? '&#9662;' : '&#9656;') + '</div>' +
       '</div>' +
 
       // â”€â”€ DETAIL PANEL â”€â”€
@@ -2054,22 +2054,22 @@ function renderTournCard(t, nested) {
             '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">' +
               // tile: % filled
               '<div style="background:#F4F6F9;border-radius:8px;padding:10px 8px;text-align:center;border:1px solid #E0E6F0">' +
-                '<div id="tile-pct-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">â€”</div>' +
+                '<div id="tile-pct-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">&mdash;</div>' +
                 '<div style="font-size:10px;color:#6B7A99;margin-top:2px">Slots Filled</div>' +
               '</div>' +
               // tile: confirmed slots
               '<div style="background:#F4F6F9;border-radius:8px;padding:10px 8px;text-align:center;border:1px solid #E0E6F0">' +
-                '<div id="tile-confirmed-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">â€”</div>' +
+                '<div id="tile-confirmed-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">&mdash;</div>' +
                 '<div style="font-size:10px;color:#6B7A99;margin-top:2px">Confirmed</div>' +
               '</div>' +
               // tile: open slots
               '<div style="background:#F4F6F9;border-radius:8px;padding:10px 8px;text-align:center;border:1px solid #E0E6F0">' +
-                '<div id="tile-open-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">â€”</div>' +
+                '<div id="tile-open-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">&mdash;</div>' +
                 '<div style="font-size:10px;color:#6B7A99;margin-top:2px">Open Slots</div>' +
               '</div>' +
               // tile: officials responded
               '<div style="background:#F4F6F9;border-radius:8px;padding:10px 8px;text-align:center;border:1px solid #E0E6F0">' +
-                '<div id="tile-responded-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">â€”</div>' +
+                '<div id="tile-responded-' + t.id + '" style="font-size:20px;font-weight:800;color:#1B2A4A">&mdash;</div>' +
                 '<div style="font-size:10px;color:#6B7A99;margin-top:2px">Responded</div>' +
               '</div>' +
             '</div>' +
@@ -2094,7 +2094,7 @@ function renderTournCard(t, nested) {
             // Countdown circle
             '<div style="background:#F4F6F9;border-radius:10px;padding:14px 10px;text-align:center;border:1px solid #E0E6F0">' +
               '<div style="width:70px;height:70px;border-radius:50%;border:4px solid ' + cBdr + ';display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 8px">' +
-                '<div style="font-size:22px;font-weight:800;color:#1B2A4A;line-height:1">' + (cDays!==null?Math.max(0,cDays):'â€”') + '</div>' +
+                '<div style="font-size:22px;font-weight:800;color:#1B2A4A;line-height:1">' + (cDays!==null?Math.max(0,cDays):'&mdash;') + '</div>' +
                 '<div style="font-size:9px;color:#6B7A99;text-transform:uppercase;letter-spacing:.3px">days</div>' +
               '</div>' +
               '<div style="font-size:11px;font-weight:700;color:#1B2A4A">' + (t.date||'TBD') + '</div>' +
@@ -2117,7 +2117,7 @@ function renderTournCard(t, nested) {
           '</div>' + // end right sidebar
         '</div>' + // end two-column body
 
-        // â”€â”€ QUICK ACTIONS ROW â€” order: Edit &middot; Import Games &middot; Review Blocks &middot; Send Invitations &middot; View Responses &middot; Copy Link &middot; Close Signup &middot; Cancel &middot; Delete â”€â”€
+        // â”€â”€ QUICK ACTIONS ROW &mdash; order: Edit &middot; Import Games &middot; Review Blocks &middot; Send Invitations &middot; View Responses &middot; Copy Link &middot; Close Signup &middot; Cancel &middot; Delete â”€â”€
         '<div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:12px;border-top:1px solid #E0E6F0">' +
           (t.status !== 'archived' ?
             '<button class="btn btn-out btn-sm" style="color:#C9A84C;border-color:#C9A84C" onclick="openEditTournament(\'' + t.id + '\');event.stopPropagation()">Edit</button>' : '') +
@@ -2306,7 +2306,7 @@ function openBlockReview(){
 }
 function openBlockReviewFromCard(tid){
   G_IMPORT_TOURN_ID=tid;
-  brOpen(tid); // always open full block modal â€” reminder check is only on Send Invitations
+  brOpen(tid); // always open full block modal &mdash; reminder check is only on Send Invitations
 }
 
 var SEND_SCHEDULES_TID = null;
@@ -2419,7 +2419,7 @@ function openReminderConfirm(tid,t){
 
 function brOpen(tid){
   console.log('[brOpen] called tid='+tid+' | BRK.blocks at entry:', JSON.stringify(BRK.blocks).slice(0,300));
-  // Clear stale data immediately â€” before any async fetch resolves
+  // Clear stale data immediately &mdash; before any async fetch resolves
   BRK.tid=tid;BRK.locked=false;BRK.sel=null;BRK.undoStack=[];
   BRK.invitationLocked=false;BRK.invitationsSentAt=null;BRK.claimCounts={};
   BRK.blocks=[];BRK.games=[];
@@ -2431,7 +2431,7 @@ function brOpen(tid){
   openModal('block-review-modal');
   document.getElementById('br-grid').innerHTML='<div style="padding:20px;color:#6B7A99">Loading\u2026</div>';
   document.getElementById('br-edit').style.display='none';
-  // Use Supabase JS client directly for all fetches â€” bypasses Netlify proxy which can
+  // Use Supabase JS client directly for all fetches &mdash; bypasses Netlify proxy which can
   // drop query-string filters, causing wrong tournament's data to load.
   Promise.all([
     supabase.from('games').select('*').eq('tournament_id',tid).order('time_slot',{ascending:true}).order('court',{ascending:true}),
@@ -2445,7 +2445,7 @@ function brOpen(tid){
     var tournResult=res[2];
     var claimsResult=res[3];
 
-    // Layout lock status â€” use invitations_sent_at as the authoritative signal,
+    // Layout lock status &mdash; use invitations_sent_at as the authoritative signal,
     // not layout_locked which can be stale after game re-imports or resends.
     var tournRow=tournResult.data&&tournResult.data[0];
     BRK.invitationLocked=!!(tournRow&&tournRow.invitations_sent_at);
@@ -2582,7 +2582,7 @@ function brRender(){
     });
   });
 
-  // Empty state â€” no games imported yet for this tournament
+  // Empty state &mdash; no games imported yet for this tournament
   if(!BRK.games.length || !slots.length){
     document.getElementById('br-grid').innerHTML=
       '<div style="text-align:center;padding:40px 20px;color:#6B7A99">'+
@@ -2717,7 +2717,7 @@ function brMerge(){
 
 function brToggleLock(){
   if(BRK.invitationLocked){
-    // Invitation-locked â€” manual toggle does nothing; show visible warning
+    // Invitation-locked &mdash; manual toggle does nothing; show visible warning
     var sentLabel='';
     if(BRK.invitationsSentAt){
       sentLabel=' on '+new Date(BRK.invitationsSentAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
@@ -2832,7 +2832,7 @@ function brDoOpen(count){
     document.getElementById('br-confirm-btn').disabled=false;
     if(!result.error){
       closeModal('block-review-modal');
-      openInviteModal(tid, true); // first-time send â€” skip reminder check
+      openInviteModal(tid, true); // first-time send &mdash; skip reminder check
       loadTournaments();
     } else {
       alert('Error saving tournament status: '+result.error.message);
@@ -2842,7 +2842,7 @@ function brDoOpen(count){
 
 
 function openNewTournamentModal() {
-  // Always reset every field to defaults before opening â€” prevents pre-fill from previous entry
+  // Always reset every field to defaults before opening &mdash; prevents pre-fill from previous entry
   document.getElementById('tn-name').value    = '';
   document.getElementById('tn-date').value    = '';
   document.getElementById('tn-loc').value     = '';
@@ -2944,7 +2944,7 @@ function createTournament() {
   };
 
   if (days <= 1) {
-    // Single tournament â€” original behavior
+    // Single tournament &mdash; original behavior
     var code = name.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 6).toUpperCase();
     var data = Object.assign({}, baseData, { name: name, date: date, signup_code: code });
     if (btn) { btn.textContent = 'Creating&hellip;'; btn.disabled = true; }
@@ -3017,7 +3017,7 @@ function viewAvailability(tid) {
   var rosterBtn = document.getElementById('resp-view-responses-btn');
   if (rosterBtn) rosterBtn.onclick = function() { gotoTab('officials'); closeModal('responses-modal'); };
 
-  // Days until tournament (local midnight â€” avoids UTC off-by-one)
+  // Days until tournament (local midnight &mdash; avoids UTC off-by-one)
   var daysLeft = tourn && tourn.date ? daysUntil(tourn.date) : null;
 
   Promise.all([
@@ -3104,7 +3104,7 @@ function viewAvailability(tid) {
 
     if (blocks.length === 0) {
       document.getElementById('responses-content').innerHTML =
-        '<div style="padding:48px 24px;text-align:center;font-size:14px;color:#6B7A99">No blocks created yet â€” import games and review blocks first.</div>';
+        '<div style="padding:48px 24px;text-align:center;font-size:14px;color:#6B7A99">No blocks created yet &mdash; import games and review blocks first.</div>';
       return;
     }
 
@@ -3140,7 +3140,7 @@ function viewAvailability(tid) {
           var bc = claimsByBlock[block.id] || [];
           var needed = parseInt(block.officials_needed) || 1;
           var filled = bc.length;
-          var timeStr = block.start_time ? block.start_time + (block.end_time ? ' â€“ ' + block.end_time : '') : '';
+          var timeStr = block.start_time ? block.start_time + (block.end_time ? ' &ndash; ' + block.end_time : '') : '';
           var fillClr = filled >= needed ? '#1A7A4A' : filled > 0 ? '#C9A84C' : '#9CA3AF';
 
           // Block sub-row
@@ -3370,7 +3370,7 @@ function doLoad(type) {
       alert('CSV must have a court_name or court column. Download the template for the correct format.');
       return;
     }
-    // Normalize dates: M/D/YYYY â†’ YYYY-MM-DD so date filter works regardless of format
+    // Normalize dates: M/D/YYYY &rarr; YYYY-MM-DD so date filter works regardless of format
     rows.forEach(function(r) {
       if (r.date && r.date.indexOf('/') !== -1) {
         var p = r.date.split('/');
@@ -3391,7 +3391,7 @@ function doLoad(type) {
         return;
       }
     }
-    // Remap court_name â†’ court (or keep court if already set), start_time â†’ time_slot
+    // Remap court_name &rarr; court (or keep court if already set), start_time &rarr; time_slot
     rows.forEach(function(r) {
       if (r.court_name !== undefined) r.court = r.court_name;
       else if (r.court !== undefined) r.court_name = r.court;
@@ -3674,7 +3674,7 @@ function runSched() {
       gamesAssigned: 0,
       consecutive: 0,    // games worked in current work block
       restRemaining: 0,  // slots still sitting out
-      _w4Done: false,    // true if worked W4 exception â€” done for day
+      _w4Done: false,    // true if worked W4 exception &mdash; done for day
       lastCourt: null,
       assignments: [],
       pattern: []
@@ -3740,7 +3740,7 @@ function runSched() {
   // Depends on fill pressure (ratio of games needed vs official capacity)
   //
   // HIGH PRESSURE (many games, need to maximize utilization):
-  //   Returning officials (just cleared rest) go first â€” they must complete patterns
+  //   Returning officials (just cleared rest) go first &mdash; they must complete patterns
   //   Then fresh officials sorted by most remaining capacity
   //
   // LOW PRESSURE (enough officials, spread the wealth):
@@ -3797,7 +3797,7 @@ function runSched() {
   function applyRest(o) {
     var worked = o.consecutive;
     if (worked >= 4) {
-      // W4 exception: official is DONE for the day â€” no sit, no more games
+      // W4 exception: official is DONE for the day &mdash; no sit, no more games
       o.restRemaining = 0;
       o._w4Done = true; // flag: this official worked 4 in a row, day is over
     } else if (worked >= 3) {
@@ -3939,7 +3939,7 @@ function runSched() {
           && sorted.some(function(g){ return g.time_slot === nextSlot && g.court === o.lastCourt; })
           && (effMax - o.gamesAssigned) >= 1;
         if (!canExtendToW3) {
-          // W2 set is done â€” apply S1 rest
+          // W2 set is done &mdash; apply S1 rest
           if (effMax - o.gamesAssigned > 0) {
             applyRest(o); // restRemaining=1, consecutive=0
           } else {
@@ -4409,14 +4409,14 @@ if (signupCode) {
   // Show availability form for officials
   document.body.innerHTML = buildSignupForm(signupCode);
 } else {
-  // Listen for auth state changes â€” fires for magic links, recovery tokens,
+  // Listen for auth state changes &mdash; fires for magic links, recovery tokens,
   // existing sessions (INITIAL_SESSION), and sign-outs.
   // Don't show any screen until getSession() resolves to avoid flashing login.
   var _appVisible = false;
   var _inPasswordRecovery = false;
   supabase.auth.onAuthStateChange(function(event, session) {
     if (event === 'PASSWORD_RECOVERY') {
-      // User clicked a password-reset link â€” show the set-new-password form.
+      // User clicked a password-reset link &mdash; show the set-new-password form.
       // Set flag so the SIGNED_IN event that follows does NOT load the app.
       _inPasswordRecovery = true;
       document.getElementById('reset-screen').style.display = 'block';
@@ -4424,7 +4424,7 @@ if (signupCode) {
       document.getElementById('signup-screen').style.display = 'none';
       document.getElementById('app-screen').style.display = 'none';
     } else if (event === 'SIGNED_IN' && session && !_appVisible && !_inPasswordRecovery) {
-      // Magic link sign-in or token exchange â€” load the app
+      // Magic link sign-in or token exchange &mdash; load the app
       G.token = session.access_token;
       G.user = session.user;
       _appVisible = true;
@@ -4437,13 +4437,13 @@ if (signupCode) {
   });
 
   // Check for an existing session (page refresh while already logged in).
-  // If a hash token was present on load, onAuthStateChange owns routing entirely â€”
+  // If a hash token was present on load, onAuthStateChange owns routing entirely &mdash;
   // getSession() must not also call loadOrgAndShow() or it races with PASSWORD_RECOVERY.
   supabase.auth.getSession().then(function(result) {
     var session = result.data && result.data.session;
     if (_hadHashOnLoad) {
       // Hash flow: onAuthStateChange already fired (or will fire) PASSWORD_RECOVERY
-      // or SIGNED_IN â€” do nothing here to avoid overriding it.
+      // or SIGNED_IN &mdash; do nothing here to avoid overriding it.
       if (!session) showLogin();
     } else if (session && !_appVisible) {
       G.token = session.access_token;
@@ -5079,13 +5079,13 @@ function calculateBlocks(tid, gameRows, payPerGame, mode, opg) {
     var sizes=[], rem=total, tries=0;
     while(rem>0){
       if(rem===1){
-        // Absorb into last block â€” never allow 1-game block
+        // Absorb into last block &mdash; never allow 1-game block
         if(sizes.length>0) sizes[sizes.length-1]++;
         rem=0;
       } else if(rem===2){ sizes.push(2); rem=0;
       } else if(rem===3){ sizes.push(3); rem=0;
       } else if(rem===4){
-        // 4 can go as 2+2 or 3+1(bad) â€” always do 2+2 or leave for next iter
+        // 4 can go as 2+2 or 3+1(bad) &mdash; always do 2+2 or leave for next iter
         sizes.push(2); rem-=2;
       } else {
         var pick = Math.random()<0.5?2:3;
@@ -5099,7 +5099,7 @@ function calculateBlocks(tid, gameRows, payPerGame, mode, opg) {
       }
       if(++tries>500) break;
     }
-    // Final validation â€” if any size is 1, merge it
+    // Final validation &mdash; if any size is 1, merge it
     for(var i=0;i<sizes.length;i++){
       if(sizes[i]===1){
         if(i>0){sizes[i-1]++;sizes.splice(i,1);i--;}
@@ -5120,7 +5120,7 @@ function calculateBlocks(tid, gameRows, payPerGame, mode, opg) {
     var sizes=[],rem=total;
     while(rem>0){
       if(rem===1){
-        // Never a 1-game block â€” absorb into previous
+        // Never a 1-game block &mdash; absorb into previous
         if(sizes.length>0) sizes[sizes.length-1]++;
         else sizes.push(2); // shouldn't happen
         rem=0;
@@ -5168,7 +5168,7 @@ function calculateBlocks(tid, gameRows, payPerGame, mode, opg) {
 
 function saveBlocksToDB(tid, blocks) {
   if(!blocks||!blocks.length){dm('No blocks to save');return;}
-  // Use Supabase client directly â€” proxy strips WHERE clause from DELETE â†’ blocks would stack
+  // Use Supabase client directly &mdash; proxy strips WHERE clause from DELETE &rarr; blocks would stack
   supabase.from('available_blocks').delete().eq('tournament_id', tid)
     .then(function(){
       var batches=[];
@@ -5201,7 +5201,7 @@ function saveGamesToDB(tid, gameRows) {
   var statusEl = document.getElementById('g-status');
   if (statusEl) { statusEl.textContent = 'Saving ' + gameRows.length + ' games to database...'; statusEl.style.color = '#A0620A'; }
 
-  // Delete existing then insert fresh â€” use Supabase client directly (proxy strips WHERE on DELETE)
+  // Delete existing then insert fresh &mdash; use Supabase client directly (proxy strips WHERE on DELETE)
   supabase.from('games').delete().eq('tournament_id', tid)
     .then(function() {
     dm('Games deleted for tournament ' + tid);
@@ -5223,7 +5223,7 @@ function saveGamesToDB(tid, gameRows) {
     function nextBatch() {
       if (idx >= batches.length) {
         dm('Games saved to DB: ' + saved);
-        // Reset layout lock â€” fresh game import means new blocks not yet sent to officials
+        // Reset layout lock &mdash; fresh game import means new blocks not yet sent to officials
         supabase.from('tournaments').update({layout_locked:false,invitations_sent_at:null}).eq('id',tid).then(function(){
           var found=(G.allTournaments||[]).find(function(t){return t.id===tid;});
           if(found){found.layout_locked=false;found.invitations_sent_at=null;}
@@ -5479,7 +5479,7 @@ function openInviteModal(tid, skipReminderCheck) {
   }
   G_INVITE_TOURN = t;
 
-  document.getElementById('invite-modal-title').textContent = 'Send Invitations â€” ' + t.name;
+  document.getElementById('invite-modal-title').textContent = 'Send Invitations &mdash; ' + t.name;
 
   document.getElementById('invite-tourn-info').innerHTML =
     '<b style="color:#C9A84C">' + t.name + '</b>&nbsp;&nbsp;|&nbsp;&nbsp;' +
@@ -5642,7 +5642,7 @@ function sendInvitations() {
               btn.disabled = false;
               btn.textContent = 'Send Invitations';
               document.getElementById('invite-cancel-btn').textContent = 'Close';
-              statusEl.innerHTML = '<span style="color:#C9A84C;font-weight:700">Demo Mode</span> â€” ' +
+              statusEl.innerHTML = '<span style="color:#C9A84C;font-weight:700">Demo Mode</span> &mdash; ' +
                 eligible.length + ' invitation' + (eligible.length !== 1 ? 's' : '') + ' queued <span style="color:#6B7A99">(no emails sent)</span>';
               statusEl.style.color = '#1B2A4A';
               // Still lock layout so the flow continues realistically
@@ -5657,7 +5657,7 @@ function sendInvitations() {
               // Show Simulate Responses button now that layout is locked
               var simBtn = document.getElementById('simulate-responses-btn');
               if (simBtn) simBtn.style.display = 'inline-block';
-              showToast('Demo Mode â€” no real emails sent', '#C9A84C');
+              showToast('Demo Mode &mdash; no real emails sent', '#C9A84C');
             }, 800);
             return;
           }
@@ -5733,7 +5733,7 @@ function sendInvitations() {
             console.log('Full invite result:', result);
             if (result.results && result.results.sent) {
               result.results.sent.forEach(function(s) {
-                console.log(s.name, 'â€” SMS:', s.smsStatus, '| Email:', s.emailStatus, s.emailError ? '('+s.emailError+')' : '');
+                console.log(s.name, '&mdash; SMS:', s.smsStatus, '| Email:', s.emailStatus, s.emailError ? '('+s.emailError+')' : '');
               });
             }
           })
@@ -5772,7 +5772,7 @@ function simulateResponses() {
     var blocks   = (res[0].data || []);
     var officials = (res[1].data || []);
 
-    if (!blocks.length)   { showToast('No blocks found â€” import games first', '#C0392B'); reset(); return; }
+    if (!blocks.length)   { showToast('No blocks found &mdash; import games first', '#C0392B'); reset(); return; }
     if (!officials.length){ showToast('No active officials found', '#C0392B'); reset(); return; }
 
     // 2. Pick up to 10 unique officials at random
@@ -5786,7 +5786,7 @@ function simulateResponses() {
     var expiresAt        = new Date(Date.now() + 7*24*60*60*1000).toISOString();
     var uniqueBlocks     = [];
 
-    // One block per picked official â€” spread across different courts
+    // One block per picked official &mdash; spread across different courts
     var usedBlockIds = new Set();
     picked.forEach(function(official) {
       // Try to find a block not yet used; if all used, allow repeat
@@ -5834,7 +5834,7 @@ function simulateResponses() {
       }
 
       document.getElementById('invite-status').innerHTML =
-        '<span style="color:#1A7A4A;font-weight:700">' + n + ' demo official' + (n!==1?'s':'') + ' confirmed</span> â€” reload or open Confirmed Officials to see them.';
+        '<span style="color:#1A7A4A;font-weight:700">' + n + ' demo official' + (n!==1?'s':'') + ' confirmed</span> &mdash; reload or open Confirmed Officials to see them.';
       reset();
     }).catch(function(e) {
       showToast('Simulation error: ' + e.message, '#C0392B');
@@ -5869,8 +5869,8 @@ function resendToOfficial(officialId, tid, evt) {
     })
   }).then(function(r){return r.json();})
   .then(function(result){
-    if (btn) { btn.disabled=false; btn.textContent='Sent âœ“'; btn.style.color='#1A7A4A'; }
-    dm('Resent to 1 official â€” email:' + (result.email&&result.email.sent>0?'âœ“':'âœ—'));
+    if (btn) { btn.disabled=false; btn.textContent='Sent &#10003;'; btn.style.color='#1A7A4A'; }
+    dm('Resent to 1 official &mdash; email:' + (result.email&&result.email.sent>0?'&#10003;':'&#10007;'));
   }).catch(function(e){
     if (btn) { btn.disabled=false; btn.textContent='Failed'; btn.style.color='#C0392B'; }
     dm('Resend error: ' + e.message);
@@ -5938,12 +5938,12 @@ function deleteTournament(tid, tname) {
   if (typed === null) return;
   if (typed.trim() !== tname.trim()) { alert('Name did not match. Deletion cancelled.'); return; }
 
-  // Single delete â€” DB CASCADE removes all child rows automatically
+  // Single delete &mdash; DB CASCADE removes all child rows automatically
   // (invite_tokens, claims, available_blocks, games, schedules,
   //  tournament_days, official_blocks, availability).
   supabase.from('tournaments').delete().eq('id', tid).then(function(result) {
     if (result.error) {
-      alert('Delete failed â€” database was not changed.\n\n' + result.error.message);
+      alert('Delete failed &mdash; database was not changed.\n\n' + result.error.message);
       return;
     }
     dm('Tournament deleted: ' + tname);
@@ -6178,9 +6178,9 @@ function loadSchedulerData() {
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <select id="br-mode" onchange="brChangeMode()" style="font-size:12px;padding:5px 10px;border:1px solid #D1D9E6;border-radius:6px;background:#fff">
-          <option value="hybrid">Hybrid â€” mixed W2 + W3</option>
-          <option value="w2">All W2 â€” 2-game blocks</option>
-          <option value="w3">All W3 â€” 3-game blocks</option>
+          <option value="hybrid">Hybrid &mdash; mixed W2 + W3</option>
+          <option value="w2">All W2 &mdash; 2-game blocks</option>
+          <option value="w3">All W3 &mdash; 3-game blocks</option>
         </select>
         <button class="btn btn-out btn-sm" id="br-shuffle" onclick="brShuffle()" style="font-size:12px" title="Re-randomize the mix. Keep clicking until you like the layout.">&#9674; Shuffle</button>
         <button id="br-lock" onclick="brToggleLock()" style="padding:5px 12px;border-radius:6px;border:1px solid #1A7A4A;background:#fff;color:#1A7A4A;font-size:12px;font-weight:600;cursor:pointer" title="Lock prevents accidental shuffle/mode changes. Unlock anytime. Manual edits always work.">Lock In Layout</button>
@@ -6191,7 +6191,7 @@ function loadSchedulerData() {
     </div>
     <div id="br-invite-lock-notice" style="display:none;background:#FEF9C3;border:1px solid #CA8A04;border-radius:8px;padding:10px 14px;font-size:12px;color:#713F12;margin-bottom:10px"></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px" id="br-stats"></div>
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6B7A99;margin-bottom:8px">Block layout â€” as officials will see it</div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#6B7A99;margin-bottom:8px">Block layout &mdash; as officials will see it</div>
     <div style="overflow-x:auto"><div id="br-grid"></div></div>
     <div id="br-edit" style="display:none;margin-top:12px;border-radius:10px;padding:14px;background:#FAFAFA;border:1.5px solid #E0E6F0">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">

@@ -1692,8 +1692,9 @@ function loadTournamentStats(tid) {
       var courtMap = {};
       blks.forEach(function(b) {
         var c = b.court_first || 'Unknown';
-        if (!courtMap[c]) courtMap[c] = { needed: 0, filled: 0 };
+        if (!courtMap[c]) courtMap[c] = { needed: 0, filled: 0, games: 0 };
         courtMap[c].needed += parseInt(b.officials_needed) || 1;
+        courtMap[c].games += parseInt(b.game_count) || 0;
       });
       // add filled count from claims
       clms.forEach(function(c) {
@@ -1714,7 +1715,9 @@ function loadTournamentStats(tid) {
         return '<div style="display:flex;align-items:center;gap:5px;font-size:12px;padding:2px 0">' +
           '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';flex-shrink:0"></span>' +
           '<span style="color:#1B2A4A;font-weight:600">' + c + '</span>' +
-          '<span style="color:#6B7A99;font-size:11px">' + m.filled + '/' + m.needed + '</span>' +
+          '<span style="color:#6B7A99;font-size:11px">' + m.filled + '/' + m.needed +
+            (m.games ? ' &nbsp;·&nbsp; <span style="color:#1B2A4A;font-weight:500">' + m.games + ' games</span>' : '') +
+          '</span>' +
           '</div>';
       }).join('');
       if (courtSumEl) {

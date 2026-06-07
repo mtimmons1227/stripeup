@@ -1892,10 +1892,20 @@ function renderTournaments() {
     var sclr = minDays > 21 ? '#1A7A4A' : minDays > 7 ? '#A0620A' : '#C0392B';
     var seriesKey = grp.baseName.replace(/[^a-zA-Z0-9]/g, '-');
 
+    // Build combined title: "PSA Summer Jam tournament Saturday and Sunday"
+    var dayLabels = grp.items.map(function(t) {
+      var info = detectSeriesInfo(t.name);
+      return info ? info.dayLabel : '';
+    }).filter(Boolean);
+    var titleSuffix = dayLabels.length >= 2
+      ? dayLabels.slice(0, -1).join(', ') + ' and ' + dayLabels[dayLabels.length - 1]
+      : dayLabels[0] || '';
+    var seriesTitle = titleSuffix ? grp.baseName + ' ' + titleSuffix : grp.baseName;
+
     var header =
       '<div style="margin-bottom:0;border-radius:10px 10px 0 0;background:linear-gradient(90deg,#0E1C35 0%,#1B2A4A 100%);border:1px solid #2A3A5A;border-bottom:none;padding:10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
         '<span style="width:8px;height:8px;border-radius:50%;background:#C9A84C;flex-shrink:0;display:inline-block"></span>' +
-        '<span style="font-size:14px;font-weight:800;color:#fff;letter-spacing:.2px">' + grp.baseName + '</span>' +
+        '<span style="font-size:14px;font-weight:800;color:#fff;letter-spacing:.2px">' + seriesTitle + '</span>' +
         '<span style="font-size:10px;font-weight:700;background:#C9A84C;color:#1B2A4A;padding:2px 9px;border-radius:10px;letter-spacing:.3px">' + dayWord + ' series</span>' +
         (dateRange ? '<span style="font-size:11px;color:#A0B0C8;margin-left:4px">' + dateRange + '</span>' : '') +
         '<div id="series-rollup-' + seriesKey + '" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:11px;color:#6B7A99">&hellip;</div>' +

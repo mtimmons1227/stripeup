@@ -1705,6 +1705,7 @@ function loadTournamentStats(tid) {
         }
       });
       var courts = Object.keys(courtMap).sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true}); });
+      var totalGames = courts.reduce(function(sum, c){ return sum + (courtMap[c].games || 0); }, 0);
       var fullCt = 0, partCt = 0, emptyCt = 0;
       courtEl.innerHTML = courts.map(function(c) {
         var m = courtMap[c];
@@ -1722,6 +1723,7 @@ function loadTournamentStats(tid) {
       }).join('');
       if (courtSumEl) {
         var parts = [];
+        if (totalGames) parts.push('<span style="color:#1B2A4A;font-weight:700">' + totalGames + ' total games</span>');
         if (fullCt) parts.push('<span style="color:#1A7A4A;font-weight:600">' + fullCt + ' fully staffed</span>');
         if (partCt) parts.push('<span style="color:#C9A84C;font-weight:600">' + partCt + ' partial</span>');
         if (emptyCt) parts.push('<span style="color:#6B7A99">' + emptyCt + ' empty</span>');

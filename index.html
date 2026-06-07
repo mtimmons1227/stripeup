@@ -3185,6 +3185,20 @@ function doLoad(type) {
       alert('CSV must have a court_name column. Download the template for the correct format.');
       return;
     }
+    // Filter to only rows matching the tournament's date (supports multi-day CSV files)
+    var importTourn = (G.allTournaments || []).find(function(t){ return t.id === G_IMPORT_TOURN_ID; });
+    var importTournDate = importTourn && (importTourn.date || importTourn.start_date);
+    if (importTournDate) {
+      var rowsBefore = rows.length;
+      rows = rows.filter(function(r){ return !r.date || r.date === importTournDate; });
+      if (rows.length < rowsBefore) {
+        dm('Date filter: kept ' + rows.length + ' of ' + rowsBefore + ' rows matching ' + importTournDate);
+      }
+      if (!rows.length) {
+        alert('No games found for tournament date ' + importTournDate + '. Check that your CSV has a "date" column and the dates match.');
+        return;
+      }
+    }
     // Remap court_name → court, start_time → time_slot
     rows.forEach(function(r) {
       if (r.court_name !== undefined) r.court = r.court_name;
@@ -3200,7 +3214,7 @@ function doLoad(type) {
     var gc = document.getElementById('gc');
     var gcb = document.getElementById('gcb');
     if (gc) gc.style.display = 'block';
-    var summary = 'Imported ' + rows.length + ' games across ' + courts.length + ' courts (court names: ' + courts.join(', ') + ')';
+    var summary = 'Imported ' + rows.length + ' games across ' + courts.length + ' courts' + (importTournDate ? ' for ' + importTournDate : '') + ' (court names: ' + courts.join(', ') + ')';
     if (gcb) gcb.innerHTML = '<b>' + summary + '</b>';
 
     var gStatus = document.getElementById('g-status');

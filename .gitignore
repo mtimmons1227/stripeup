@@ -1,0 +1,5 @@
+# Local dev only — not deployed
+test-checklist.html
+
+# Claude Code local settings
+.claude/settings.local.json

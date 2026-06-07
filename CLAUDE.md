@@ -312,7 +312,111 @@ All child tables cascade on tournament delete (confirmed April 2026). No org_id 
 
 ---
 
-## 9. Stack & Environment
+## 9. Reports Reference
+
+All reports live in the **Reports** tab (`index.html` → `#tab-reports`). Each section uses a pill-tab selector. All queries use the Supabase JS client directly (never sbFetch proxy). All 4 reports have Export CSV buttons.
+
+---
+
+### 9a. 1099 Payments Report
+
+**Purpose:** Tax compliance. Identifies officials who earned enough to require a 1099-NEC filing.
+
+**Data source:** `v_1099_report` Supabase view → aggregates confirmed payments by official per tax year.
+
+**Filters:** `org_id` + `tax_year` (dropdown: current year back 5 years)
+
+**Columns:** Official name · Email · Total Games · Total Pay · 1099 Required (Yes if ≥ $600)
+
+**Totals row:** Sum of all games and total pay across all officials.
+
+**Logic:** Only includes payments from tournaments where `is_taxable = true` and claims where `status = 'confirmed'`. Sorted by total pay descending.
+
+**Export CSV:** `1099_report_YYYY.csv` — columns: Official, Email, Games, Total Pay, Needs 1099
+
+**JS functions:** `run1099Report()`, `export1099Csv()`
+
+**When to run:** End of tax year, or any time you need to know who hit the $600 threshold.
+
+---
+
+### 9b. Staffing Report
+
+**Purpose:** Operations. Shows which tournaments are understaffed so the assigner can take action before game day.
+
+**Data source:** `tournaments` + `available_blocks` (slots needed) + `claims` (slots filled, distinct officials)
+
+**Filters:** All tournaments for the org, ordered newest first.
+
+**Columns:** Tournament name · Date · Games · Total Slots · Slots Filled · Open Slots · Confirmed Officials · % Staffed
+
+**Color coding:** % Staffed badge — green ≥100%, amber ≥50%, red <50%
+
+**Open Slots** column shows in red when > 0.
+
+**Export CSV:** `staffing_report.csv`
+
+**JS functions:** `runStaffingReport()`, `exportStaffingCsv()`
+
+**When to run:** Weekly during signup period; daily in the 48 hours before a tournament.
+
+---
+
+### 9c. Official Activity Report
+
+**Purpose:** Per-official earnings and workload summary across all tournaments. Useful for pay verification and workload balancing.
+
+**Data source:** `tournaments` (pay_per_game) + `claims` (confirmed, by official) + `available_blocks` (game_count per block)
+
+**Filters:** All confirmed claims across all org tournaments.
+
+**Columns:** Rank · Official · Email · Tournaments worked · Total Games · Est. Pay
+
+**Est. Pay** = sum of (game_count × pay_per_game) for each confirmed block.
+
+Sorted by estimated pay descending.
+
+**Export CSV:** `official_activity_report.csv`
+
+**JS functions:** `runActivityReport()`, `exportActivityCsv()`
+
+**When to run:** After each tournament to verify earnings; before season-end for 1099 prep.
+
+---
+
+### 9d. Payout Summary Report
+
+**Purpose:** Budget tracking. Shows total estimated payout per tournament so the assigner knows what they owe before writing checks.
+
+**Data source:** `tournaments` (pay_per_game) + `claims` (confirmed) + `available_blocks` (game_count)
+
+**Filters:** All org tournaments, ordered newest first.
+
+**Columns:** Tournament · Date · $/Game · Confirmed Officials · Games Assigned · Est. Payout
+
+**Grand total row:** Sum of all estimated payouts across all tournaments.
+
+**Est. Payout** per tournament = sum of (game_count × pay_per_game) for all confirmed claims on that tournament.
+
+**Export CSV:** `payout_summary.csv`
+
+**JS functions:** `runPayoutsReport()`, `exportPayoutsCsv()`
+
+**When to run:** 1–2 days before a tournament to know the exact payout; after tournament to reconcile.
+
+---
+
+### 9e. Shared Reporting Notes
+
+- `_rptData` global object holds last-run data for each section (`_rptData['1099']`, `.staffing`, `.activity`, `.payouts`) — used by export functions.
+- `showReport(name)` switches the active pill tab and shows/hides sections.
+- `_dlCsv(csv, filename)` shared CSV download helper.
+- `initReportYearSelector()` populates the 1099 year dropdown (current year − 5); called by `gotoTab('reports')`.
+- CSS alert class for errors is `.alert-err` (not `.alert-error`) — match this in any new report error HTML.
+
+---
+
+## 10. Stack & Environment
 
 ### Stack
 - **Frontend**: Vanilla HTML/CSS/JS — no framework
@@ -357,7 +461,7 @@ Filter by `tournament_id IN (list of org's tournament IDs)` — never by org_id 
 
 ---
 
-## 10. Test Officials
+## 11. Test Officials
 
 - **Marvin Timmons** — marv_timmons@yahoo.com — Dallas TX — regional
 - **Erick Strickland** — marvin@thetimmonsfoundation.org — Dallas TX — regional
@@ -372,7 +476,7 @@ Filter by `tournament_id IN (list of org's tournament IDs)` — never by org_id 
 
 ---
 
-## 11. Phase 2 Notes
+## 12. Phase 2 Notes
 
 - **RLS policies** — currently disabled; must enable before public launch
 - **Payment system (Stripe)** — Phase 3, not started
@@ -382,7 +486,7 @@ Filter by `tournament_id IN (list of org's tournament IDs)` — never by org_id 
 
 ---
 
-## 12. Auto-update Instructions
+## 13. Auto-update Instructions
 
 After ANY task, Claude Code must:
 1. Add an entry to **Recent Changes Log** (section 3) with today's date and file changed

@@ -3180,11 +3180,18 @@ function doLoad(type) {
   if (!rows || !rows.length) { alert('Could not parse CSV. Check the format and try again.'); return; }
 
   if (type === 'games') {
-    // Validate required court_name column
-    if (!rows[0].hasOwnProperty('court_name')) {
-      alert('CSV must have a court_name column. Download the template for the correct format.');
+    // Accept either court_name or court column
+    if (!rows[0].hasOwnProperty('court_name') && !rows[0].hasOwnProperty('court')) {
+      alert('CSV must have a court_name or court column. Download the template for the correct format.');
       return;
     }
+    // Normalize dates: M/D/YYYY → YYYY-MM-DD so date filter works regardless of format
+    rows.forEach(function(r) {
+      if (r.date && r.date.indexOf('/') !== -1) {
+        var p = r.date.split('/');
+        if (p.length === 3) r.date = p[2] + '-' + p[0].padStart(2,'0') + '-' + p[1].padStart(2,'0');
+      }
+    });
     // Filter to only rows matching the tournament's date (supports multi-day CSV files)
     var importTourn = (G.allTournaments || []).find(function(t){ return t.id === G_IMPORT_TOURN_ID; });
     var importTournDate = importTourn && (importTourn.date || importTourn.start_date);
@@ -3199,9 +3206,10 @@ function doLoad(type) {
         return;
       }
     }
-    // Remap court_name → court, start_time → time_slot
+    // Remap court_name → court (or keep court if already set), start_time → time_slot
     rows.forEach(function(r) {
       if (r.court_name !== undefined) r.court = r.court_name;
+      else if (r.court !== undefined) r.court_name = r.court;
       if (r.start_time !== undefined) r.time_slot = normT(r.start_time);
       else if (r.time_slot) r.time_slot = normT(r.time_slot);
       if (!r.game_id) r.game_id = 'G' + Math.random().toString(36).slice(2,7).toUpperCase();

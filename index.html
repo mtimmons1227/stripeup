@@ -681,6 +681,19 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
   </div>
 </div>
 
+<!-- SEND SCHEDULES MODAL -->
+<div class="modal-bg" id="send-schedules-modal">
+  <div class="modal" style="width:460px">
+    <button class="modal-close" onclick="closeModal('send-schedules-modal')">&#10005;</button>
+    <div class="modal-title">Send Schedules</div>
+    <div id="send-schedules-body" style="font-size:14px;line-height:1.7;color:#374151;margin-bottom:20px">Loading&hellip;</div>
+    <div class="btn-row">
+      <button class="btn btn-navy" id="send-schedules-btn" disabled onclick="doSendSchedules()">Send Schedules</button>
+      <button class="btn btn-out" onclick="closeModal('send-schedules-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- SEND INVITATIONS MODAL -->
 <div class="modal-bg" id="invite-modal">
   <div class="modal" style="width:560px">
@@ -2018,6 +2031,8 @@ function renderTournCard(t, nested) {
           (t.status === 'open' || t.status === 'closed' ?
             '<button class="btn btn-gold btn-sm" onclick="openInviteModal(\'' + t.id + '\');event.stopPropagation()">Send Invitations</button>' : '') +
           '<button class="btn btn-navy btn-sm" onclick="openModal(\'responses-modal\'); viewAvailability(\'' + t.id + '\'); event.stopPropagation()">View Responses</button>' +
+          (t.invitations_sent_at ?
+            '<button class="btn btn-out btn-sm" style="color:#1B2A4A;border-color:#1B2A4A" onclick="openSendSchedules(\'' + t.id + '\');event.stopPropagation()">Send Schedules</button>' : '') +
           '<button class="btn btn-out btn-sm" onclick="copyTournLink(\'' + signupUrl + '\',event);event.stopPropagation()" title="' + signupUrl + '">Copy Link</button>' +
           (t.status === 'open' || t.status === 'closed' ?
             '<button class="btn btn-out btn-sm" style="color:#6B7A99" data-tid="' + t.id + '" data-ts="' + t.status + '" onclick="closeTournament(this.dataset.tid,this.dataset.ts);event.stopPropagation()">' + closeLabel + '</button>' : '') +
@@ -2194,6 +2209,69 @@ function openBlockReview(){
 function openBlockReviewFromCard(tid){
   G_IMPORT_TOURN_ID=tid;
   brOpen(tid); // always open full block modal — reminder check is only on Send Invitations
+}
+
+var SEND_SCHEDULES_TID = null;
+function openSendSchedules(tid) {
+  SEND_SCHEDULES_TID = tid;
+  var t = (G.allTournaments||[]).find(function(x){ return x.id === tid; });
+  var bodyEl = document.getElementById('send-schedules-body');
+  var btn    = document.getElementById('send-schedules-btn');
+  btn.disabled = true;
+  btn.textContent = 'Send Schedules';
+  bodyEl.innerHTML = 'Counting confirmed officials&hellip;';
+  openModal('send-schedules-modal');
+
+  supabase.from('claims').select('official_id', {count:'exact'})
+    .eq('tournament_id', tid).eq('status','confirmed')
+    .then(function(r) {
+      var n = r.count || 0;
+      var tname = t ? t.name : 'this tournament';
+      var dateDisplay = t && (t.date||t.start_date)
+        ? new Date((t.date||t.start_date)+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})
+        : '';
+      if (!n) {
+        bodyEl.innerHTML = 'No confirmed officials yet for <strong>' + tname + '</strong>.<br><br>Officials need to complete self-scheduling before schedules can be sent.';
+        return;
+      }
+      bodyEl.innerHTML =
+        'This will email <strong>' + n + ' confirmed official' + (n!==1?'s':'') + '</strong> their full schedule for <strong>' + tname + '</strong>' +
+        (dateDisplay ? ' on <strong>' + dateDisplay + '</strong>' : '') + '.<br><br>' +
+        'Each email includes their assigned blocks, court assignments, times, pay, and <strong>partner names</strong>.<br><br>' +
+        'Send now?';
+      btn.disabled = false;
+    }).catch(function() {
+      bodyEl.innerHTML = 'Error loading data. Please try again.';
+    });
+}
+function doSendSchedules() {
+  var tid = SEND_SCHEDULES_TID;
+  if (!tid) return;
+  var btn    = document.getElementById('send-schedules-btn');
+  var bodyEl = document.getElementById('send-schedules-body');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  fetch('/.netlify/functions/send-schedules', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({tournament_id: tid})
+  }).then(function(r){ return r.json(); }).then(function(data) {
+    if (data.error) {
+      bodyEl.innerHTML = '<span style="color:#C0392B">Error: ' + data.error + '</span>';
+      btn.textContent = 'Send Schedules'; btn.disabled = false;
+      return;
+    }
+    bodyEl.innerHTML =
+      '<span style="color:#1A7A4A;font-weight:700">&#10003; Schedules sent!</span><br><br>' +
+      '<strong>' + (data.sent||0) + '</strong> email' + ((data.sent||0)!==1?'s':'') + ' sent' +
+      (data.skipped ? ' &nbsp;&middot;&nbsp; ' + data.skipped + ' test accounts skipped' : '') +
+      (data.errors  ? ' &nbsp;&middot;&nbsp; <span style="color:#C0392B">' + data.errors + ' errors</span>' : '') + '.';
+    btn.style.display = 'none';
+    document.querySelector('#send-schedules-modal .btn-out').textContent = 'Close';
+  }).catch(function(e) {
+    bodyEl.innerHTML = '<span style="color:#C0392B">Network error: ' + e.message + '</span>';
+    btn.textContent = 'Send Schedules'; btn.disabled = false;
+  });
 }
 
 function openReminderConfirm(tid,t){

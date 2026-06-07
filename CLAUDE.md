@@ -24,8 +24,20 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 ## 3. Recent Changes Log
 
+### June 7, 2026 (second session)
+- **index.html** — `openSendSchedules(tid)`: new function — opens Send Schedules modal, counts confirmed officials via `supabase.from('claims')`, populates body with official count + tournament name/date, enables Send button when count > 0
+- **index.html** — `doSendSchedules()`: new function — POSTs `{tournament_id}` to `/.netlify/functions/send-schedules`, shows result (sent count, skipped test accounts, errors), hides Send button and changes Cancel to Close on success; uses `showToast()` for non-blocking confirmation
+- **index.html** — `SEND_SCHEDULES_TID` global added for Send Schedules state
+- **netlify/functions/send-schedules.js** — NEW FILE: sends full schedule + partner info to all confirmed officials; queries claims + blocks + tournament; groups claims by official; builds `blockOfficials` map for co-official lookup; sends HTML email via Resend with block table (block, court, time, games, pay, partner name); skips test emails; returns `{sent, skipped, errors, results}`
+
 ### June 7, 2026
 - **index.html** — `doLoad()`: added date filtering for CSV game import — after CSV is parsed, rows are filtered to only those matching the tournament's date (`G.allTournaments.find(t => t.id === G_IMPORT_TOURN_ID).date`); shows alert if no rows match; summary line now includes the tournament date; supports multi-day CSV files loaded against individual day tournaments
+- **index.html** — CSV import validation: accepts `court` column as alias for `court_name`; normalizes M/D/YYYY dates to YYYY-MM-DD before date filter comparison
+- **index.html** — `calculateBlocks()`: added `opg` parameter for `officials_per_game`; sets `officials_needed: officialsPerGame` and `total_pay: sz * pay * officialsPerGame` on each block; all 3 call sites (`brOpen`, `brApplyMode`, `saveGamesToDB` callback) updated to pass `officials_per_game` from tournament
+- **index.html** — `loadTournamentStats()`: staffing summary line now shows "N games today" in navy bold before the slots-filled count; court breakdown shows per-court game count (`m.games + ' games'`) and total games in summary
+- **index.html** — Quick actions row: "Send Schedules" button added (only shown when `invitations_sent_at` is set); modal HTML added (`id="send-schedules-modal"`)
+- **self-schedule.html** — `doConfirmSubmit()`: fires `fetch('/.netlify/functions/send-confirmation', ...)` after successful DB write for non-test emails; sends `{official_name, official_email, tournament_name, tournament_date, blocks[], total_games, total_pay}`
+- **netlify/functions/send-confirmation.js** — NEW FILE: sends "You're locked in" confirmation email to official after self-schedule completion; block table with name, court, time, games, pay; total row + important note; skips test emails
 - **game-exports/psa-summer-jam-2026-both-days.csv** — New combined 2-day schedule CSV: PSA Summer Jam July 4-5 2026, 5 courts (Court 1–5), 11 time slots per day (08:00–19:40 at 70-min intervals), 110 total games
 
 ### April 11, 2026 (fifth session)
@@ -158,13 +170,17 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - **Tournament card command center** — days-until badge, 4 metric tiles, court breakdown, countdown circle, pay estimate, dynamic action cards, quick actions row
 
 ### Games & Blocks
-- CSV import with real court names (court_name column)
+- CSV import with real court names (`court_name` or `court` column); M/D/YYYY dates normalized to YYYY-MM-DD
+- Multi-day CSV filtering: import only loads games matching the tournament's specific date
 - Filename label shows in gold after file load
 - Block layout showing correctly with gaps and colors
 - Block count stays correct — no longer multiplies on re-click
 - Import Games button disabled when games already exist
 - Confirm & Send Invitations: closes Review Blocks → opens Send Invitations
 - **Smart Layout Lock** — triggers only after `invitations_sent_at` is set (not on game import); locked blocks with claims show 🔒 + Emergency Edit; block edit panel fully inaccessible when locked
+- `officials_needed` correctly set on all new blocks — `calculateBlocks()` takes `opg` param from tournament's `officials_per_game`
+- Staffing summary line: "N games today · N of N slots filled"
+- Court breakdown: per-court game count + total games in footer
 
 ### Invitations
 - Email invites via Resend ✅
@@ -188,6 +204,7 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - Co-official names on partially filled blocks
 - Session: fresh SID on load, all held blocks released on page load
 - Submissions rejected when signup is closed
+- **Confirmation email**: after successful confirm, fires `send-confirmation` Netlify function — sends "You're locked in!" email with block table + total pay to real (non-test) emails
 
 ### View Responses
 - Per-official status badges (confirmed / declined / pending)
@@ -216,6 +233,8 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 ## 5. Deployed — Needs Browser Testing 🚀
 
 - **Full self-schedule flow end to end** — built, not yet verified with real invite link → confirmed claim
+- **Confirmation email** (`send-confirmation.js`) — deployed June 7, not yet browser-tested with real official submit
+- **Send Schedules** (`send-schedules.js` + modal + `openSendSchedules`/`doSendSchedules`) — deployed June 7, not yet tested with confirmed officials data
 - **Confirmed Officials modal redesign** — deployed April 10, not yet browser-tested with real data
 - **Tournament card command center** — deployed April 10, not yet browser-tested
 - **Send Reminders dialog** — deployed April 11, needs end-to-end test on a live tournament

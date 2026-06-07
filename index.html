@@ -2298,14 +2298,15 @@ function brOpen(tid){
 
     var t2=(G.allTournaments||[]).find(function(x){return x.id===tid;});
     var pay=t2?(parseFloat(t2.pay_per_game)||0):0;
+    var opg2=t2?(parseInt(t2.officials_per_game)||1):1;
     if(existing.length&&existing[0].block_name){
       BRK.blocks=brGroup(existing);
       // Always recalculate pay from current tournament pay_per_game
       BRK.blocks.forEach(function(cs){
-        cs.blocks.forEach(function(b){b.total_pay=b.game_ids.length*pay;});
+        cs.blocks.forEach(function(b){b.total_pay=b.game_ids.length*pay*opg2;});
       });
     }else{
-      BRK.blocks=brGroup(calculateBlocks(tid,BRK.games,pay,'hybrid'));
+      BRK.blocks=brGroup(calculateBlocks(tid,BRK.games,pay,'hybrid',opg2));
     }
     brRender();
   }).catch(function(e){
@@ -2595,7 +2596,8 @@ function brApplyMode(){
   var mode=document.getElementById('br-mode').value;
   var t=(G.allTournaments||[]).find(function(x){return x.id===BRK.tid;});
   var pay=t?(parseFloat(t.pay_per_game)||0):0;
-  BRK.blocks=brGroup(calculateBlocks(BRK.tid,BRK.games,pay,mode));
+  var opg3=t?(parseInt(t.officials_per_game)||1):1;
+  BRK.blocks=brGroup(calculateBlocks(BRK.tid,BRK.games,pay,mode,opg3));
   BRK.sel=null;BRK.undoStack=[];
   document.getElementById('br-edit').style.display='none';
   var ub=document.getElementById('br-undo-btn');if(ub)ub.style.display='none';
@@ -4741,9 +4743,10 @@ function gProceed() {
 // Sizes shown to officials: W2(2), W3(3), W2-S1-W2(4), W3-S2-W3(6)
 // 5-game blocks = anomalies from gap-filling only, never shown
 // ══════════════════════════════════════════════════════════════════
-function calculateBlocks(tid, gameRows, payPerGame, mode) {
+function calculateBlocks(tid, gameRows, payPerGame, mode, opg) {
   mode = mode || 'hybrid';
   var pay = parseFloat(payPerGame) || 0;
+  var officialsPerGame = parseInt(opg) || 1;
   var byCourt = {};
   gameRows.forEach(function(g) {
     var ct = g.court || 'Court 1';
@@ -4844,11 +4847,12 @@ function calculateBlocks(tid, gameRows, payPerGame, mode) {
         block_color:bi%2===0?'even':'odd',
         game_ids:JSON.stringify(bg.map(function(g){return g.game_id;})),
         game_count:sz,
+        officials_needed:officialsPerGame,
         pattern:sz===2?'W2':sz===3?'W3':'W'+sz,
         court_first:ct, court_second:ct,
         start_time:bg[0].time_slot, end_time:bg[bg.length-1].time_slot,
         sit_slots:JSON.stringify([]),
-        total_pay:sz*pay, status:'open', is_custom:false
+        total_pay:sz*pay*officialsPerGame, status:'open', is_custom:false
       });
       gi+=sz;
     });
@@ -4922,7 +4926,8 @@ function saveGamesToDB(tid, gameRows) {
         // Calculate self-scheduling blocks
         var tourn = (G.allTournaments||[]).find(function(t){return t.id===tid;});
         var pay = tourn ? (tourn.pay_per_game||0) : 0;
-        var blocks = calculateBlocks(tid, gameRows, pay);
+        var opg4 = tourn ? (parseInt(tourn.officials_per_game)||1) : 1;
+        var blocks = calculateBlocks(tid, gameRows, pay, 'hybrid', opg4);
         saveBlocksToDB(tid, blocks);
         if (statusEl) {
           statusEl.textContent = saved + ' games saved. ' + blocks.length + ' blocks calculated.';

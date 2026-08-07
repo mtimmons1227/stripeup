@@ -3,3 +3,5 @@ test-checklist.html
 
 # Claude Code local settings
 .claude/settings.local.json
+
+game-exports/*.csv

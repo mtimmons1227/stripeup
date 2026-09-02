@@ -6,9 +6,11 @@ This file is the single source of truth. Read it first. Update it last.
 
 ## 1. Current Status
 
+**As of September 2, 2026** — Header now has a unified account/profile menu (gold avatar + org name trigger with caret; dropdown shows org name, email, then Change Password/Sign Out) replacing the old standalone header buttons. This update also closes a ~3-month documentation gap: an Aug 7 repo/docs reorganization and the Sept 1 account-menu work had never been logged here (see section 3). Three standing doc errors were also fixed: the repo URL in section 10, the RLS status in section 12/6 (policies are **written**, not applied — all 12 public tables confirmed RLS-off), and the Database Schema table in section 8 (4 tables existed but weren't listed). A data scare was also chased down and closed: the live Supabase project's cached row-count stats (`list_tables` / dashboard estimates) showed 0 rows almost everywhere, which looked like a wipe — a direct `COUNT(*)` against the correct, active project (`mqbxqtsnfzcmmzpbrxnx`) shows the data is actually intact (88 officials, 2 tournaments, 107 games). See the "Critical" note in section 10 — don't trust cached row counts on this project again without verifying with a real query.
+
 **As of June 7, 2026** — CSV game import now filters rows by tournament date, so a multi-day CSV file will only load the games matching the specific tournament's date. A combined 2-day PSA Summer Jam schedule CSV (July 4-5, 2026, 5 courts, 11 slots/day) has been generated in game-exports/. GitHub repo migrated to mtimmons1227/stripeup; Netlify reconnected. DNS issue with AT&T ISP resolved via Google Public DNS in Chrome/Edge. Signup auth bug fixed (was routing through proxy instead of Supabase JS client directly).
 
-The next milestone is a full browser test of the self-schedule flow from invite link to confirmed games, and adding travel radius UI fields to the Officials roster table.
+The next milestone is a full browser test of the self-schedule flow from invite link to confirmed games — the existing 2 tournaments / 107 games / 88 officials are real and available to test against (counts drifted slightly from the 3 tournaments / 110 games documented below, likely from later cleanup — not investigated further). Travel radius UI fields for the Officials roster table remain queued behind that.
 
 ---
 
@@ -23,6 +25,23 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 ---
 
 ## 3. Recent Changes Log
+
+### September 2, 2026 (documentation audit)
+- **CLAUDE.md** — Closed a ~3-month gap: the Aug 7 and Sept 1 entries below existed in git history but were never logged, in violation of section 13's own auto-update rule. Fixed repo URL in section 10 (was `gridironiq/stripeup`, actual remote is `mtimmons1227/stripeup` — section 1 already recorded the migration but section 10 was never updated). Fixed RLS status in sections 6 and 12 (was framed as "not yet built"; corrected to "written April 2026, never applied" — `rls-policies.sql` and `RLS-README.md` have existed since April). Added 4 missing tables to the section 8 schema table (`assigner_scratches`, `tournament_days`, `official_blocks`, `schedules`).
+- **DB investigation** — Chased down an apparent "empty database" (all tables 0 rows except `organizations`) that turned out to be stale cached row-count stats (`list_tables`/dashboard estimate, not a live query) on the correct, active Supabase project. Real `COUNT(*)` shows data intact: 88 officials, 2 tournaments, 107 games, 43 available_blocks, 4 claims, 8 invite_tokens. No data was lost and no project mismatch occurred; see the new "Critical" note in section 10.
+- **Confirmed via Supabase directly**: all 12 public tables (including `officials`, `claims`, `invite_tokens`) have RLS disabled — matches the existing "must enable before public launch" item in section 12, now with an accurate count.
+
+### September 1, 2026 (second session)
+- **index.html** — `renderAcctMenu()`: header trigger now shows the org name (avatar initial from org name) instead of the signed-in email; falls back to email if `orgName` is missing, then to "Account" if both are missing. Dropdown reordered to org name (bold) then email (smaller/lighter), omitting the email line entirely if it's missing. Reuses `G.orgName` already loaded elsewhere — no new DB query. Auth/DB handlers unchanged.
+
+### September 1, 2026
+- **index.html** — Account/profile menu added to header: replaces the standalone "Change Password" and "Sign Out" buttons with a single compact dropdown (gold avatar + navy initial + label + caret trigger). Dropdown shows the signed-in email, "Org: {name}", a divider, then Change Password and Sign Out — calling the exact same `openModal('chgpwd-modal')` / `doLogout()` handlers as before. Toggles open/closed on click; closes on outside-click and Escape (document-level listeners); menu hides entirely if `supabase.auth.getUser()` returns no user; null-guards missing email (shows "Account", no initial). New CSS: `.acct-menu`, `.acct-trigger`, `.acct-avatar`, `.acct-dropdown`, `.acct-dd-*` classes, navy/gold palette.
+
+### August 7, 2026 (repo reorganization — no functional index.html changes)
+- **Repo** — First-time git commit of files that had existed locally since April 2026 but were never checked in: `rls-policies.sql`, `rls-testing.sql`, `RLS-README.md` (RLS policies drafted, never applied — see section 6/12), `HOW-TO-RUN-LOCALLY.md`, `Launch-StripeUp.bat`, `Setup-Desktop-Icon.bat` (local dev/launch helpers).
+- **send-invites.js** (repo root) — added as a duplicate of `netlify/functions/send-invites.js`, with extra CORS-header and required-env-var-validation code the deployed version doesn't have. **Not deployed** — `netlify.toml`'s `[functions] directory` points at `netlify/functions/` only, so this root copy is dead code left over from the reorganization. Flagged as a known issue (section 7); should be deleted or reconciled.
+- **docs/** — SDLC documentation set added (`docs/sdlc/00-planning` through `08-future-releases`, `docs/artifacts/`, a compiled Word doc) plus `tests/automated.spec.js` formalized alongside it.
+- **.gitignore** — `game-exports/*.csv`, `.claude/`, `diff_index.html.txt` added.
 
 ### June 7, 2026 (fourth session)
 - **index.html** — `loadSeriesRollup(seriesKey, tournIds, payMap)`: new function — fires 3 async Supabase queries (games count, confirmed claims, available_blocks) for all tournament IDs in a series; computes total games, distinct confirmed officials, % staffed, and total pay estimate; updates `series-rollup-{key}` div in the series header
@@ -243,6 +262,7 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - **Payout Summary**: per-tournament est. payout from confirmed games, grand total, Export CSV
 
 ### UI / UX
+- **Account/profile menu** — header trigger shows org name + gold/navy avatar + caret; dropdown shows org name, email, Change Password, Sign Out; closes on outside-click/Escape; hides with no session; null-guards missing org name/email
 - Nav trimmed to 3 tabs: Tournaments · Officials · Reports (Scheduler/Master/Individual/SubAgent removed)
 - Nav bar pills scoped to org's active tournaments — games and confirmed counts clear to 0 when all tournaments deleted
 - `showToast()` helper for non-blocking status feedback
@@ -275,8 +295,8 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - Official-facing 1099 earnings view (Phase 2)
 - Court-level rank override UI
 - Auto-release cron job for expired holds
-- RLS policies (must enable before public launch)
 - Payment system / Stripe (Phase 3)
+- RLS policies are **written but not applied** — see section 12 for status (this is not a "not yet built" item; the SQL exists, it just hasn't been run)
 
 ---
 
@@ -284,6 +304,8 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 - DEV bar still visible in production (should be hidden)
 - SMS blocked — Twilio A2P 10DLC upgrade required
+- **Stray duplicate `send-invites.js`** at repo root (added Aug 7, 2026) diverges from the deployed `netlify/functions/send-invites.js` (extra CORS headers + env-var validation) and is not wired up anywhere — `netlify.toml` points `[functions] directory` at `netlify/functions/` only. Dead file; should be deleted or reconciled to avoid someone editing the wrong copy.
+- RLS disabled on all 12 public tables (`officials`, `claims`, `invite_tokens` included) — anon key has full read/write. See section 12.
 
 ---
 
@@ -299,6 +321,8 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 | invite_tokens | id, token, official_id, tournament_id, used, expires_at, status, declined_at |
 | games | id, tournament_id, court_name, date, start_time |
 | availability | id, tournament_id, official_id, official_name, official_email, avail_start, avail_end, max_games, blocked_times, notes |
+| assigner_scratches | id, org_id, official_id, reason, created_at — active: per-org "exclude this official" list (roster scratch feature); 0 rows is normal until someone scratches an official |
+| tournament_days, official_blocks, schedules | legacy — from the removed Scheduler/Master Schedule/Individual Schedules tabs (nav cleanup, April 11 session); no longer written to by index.html, still referenced only as CASCADE-delete targets in `deleteTournament()`; 0 rows |
 
 ### Views
 - **v_1099_report** — aggregates confirmed payments by official for tax year reporting
@@ -429,7 +453,7 @@ Sorted by estimated pay descending.
 - **Database**: Supabase Postgres — project ID: `mqbxqtsnfzcmmzpbrxnx`
 - **Email**: Resend (domain: thetimmonsfoundation.org)
 - **SMS**: Twilio — blocked by A2P 10DLC, upgrade needed
-- **Repo**: github.com/gridironiq/stripeup
+- **Repo**: github.com/mtimmons1227/stripeup
 - **Live URL**: https://officials-scheduler.netlify.app
 
 ### Key files
@@ -458,6 +482,9 @@ sbFetch('/rest/v1/tournaments?id=eq.' + tid, { method: 'PATCH', ... })
 ### ⚠️ Critical: games and claims tables have no org_id column
 Filter by `tournament_id IN (list of org's tournament IDs)` — never by org_id directly on these tables. `updateNavCounts()` already does this correctly.
 
+### ⚠️ Critical: Supabase tooling row counts can be stale — don't trust them for "is the DB empty" checks
+On Sept 2, 2026, `list_tables` (and the dashboard's row estimate) reported 0 rows on every table except `organizations` (1), which looked like the whole dataset had been wiped. It hadn't — those figures come from cached Postgres planner statistics (`pg_class.reltuples`), not a live count. A direct query (`SELECT COUNT(*) FROM officials`, etc.) showed the real numbers: 88 officials, 2 tournaments, 107 games, 43 available_blocks, 4 claims, 8 invite_tokens — all intact on the correct, active project (`mqbxqtsnfzcmmzpbrxnx`). **Rule**: to check whether data actually exists, run `execute_sql` with real `COUNT(*)` queries, never rely on `list_tables`'s row-count column.
+
 ### Environment Variables (Netlify dashboard)
 - `SUPABASE_URL` — https://mqbxqtsnfzcmmzpbrxnx.supabase.co
 - `SUPABASE_ANON_KEY` — public anon key (also in index.html as publishable key — safe)
@@ -483,7 +510,7 @@ Filter by `tournament_id IN (list of org's tournament IDs)` — never by org_id 
 
 ## 12. Phase 2 Notes
 
-- **RLS policies** — currently disabled; must enable before public launch
+- **RLS policies** — written (`rls-policies.sql`, `RLS-README.md`, drafted April 2026) but never applied; confirmed via Supabase (Sept 2, 2026) that all 12 public tables still have RLS disabled, including `officials`, `claims`, and `invite_tokens` — fully exposed to the anon key. Schema has drifted since April (`invite_tokens.status`/`declined_at`, tournaments layout-lock fields didn't exist yet) — review `rls-policies.sql` against the current schema before applying, then enable prior to public launch.
 - **Payment system (Stripe)** — Phase 3, not started
 - **Official-facing 1099** — officials see their own YTD earnings summary
 - **Court-level rank override** — per-court minimum rank settings

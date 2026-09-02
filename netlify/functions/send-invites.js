@@ -11,7 +11,7 @@ const TWILIO_ACCOUNT_SID   = process.env.TWILIO_ACCOUNT_SID
 const TWILIO_AUTH_TOKEN    = process.env.TWILIO_AUTH_TOKEN
 const TWILIO_FROM_NUMBER   = process.env.TWILIO_FROM_NUMBER
 const RESEND_API_KEY       = process.env.RESEND_API_KEY
-const BASE_URL             = process.env.BASE_URL || 'https://officials-scheduler.netlify.app'
+const BASE_URL             = process.env.BASE_URL || 'https://stripeup.netlify.app'
 const FROM_EMAIL           = process.env.FROM_EMAIL || 'invites@thetimmonsfoundation.org'
 
 console.log('[send-invites] START — FROM_EMAIL:', FROM_EMAIL, '| BASE_URL:', BASE_URL, '| RESEND present:', !!RESEND_API_KEY, '| SUPABASE present:', !!SUPABASE_URL)

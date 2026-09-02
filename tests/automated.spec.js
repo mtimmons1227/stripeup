@@ -10,7 +10,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE_URL = 'https://officials-scheduler.netlify.app';
+const BASE_URL = process.env.STRIPEUP_BASE_URL || 'https://stripeup.netlify.app';
 const EMAIL = process.env.STRIPEUP_EMAIL || 'marv_timmons@yahoo.com';
 const PASSWORD = process.env.STRIPEUP_PASSWORD || '';
 

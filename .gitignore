@@ -8,3 +8,9 @@ game-exports/*.csv
 
 .claude/
 diff_index.html.txt
+
+# Local Netlify folder
+.netlify
+
+# Pre-wipe DB snapshots — contain official emails, phone numbers and live invite tokens
+backups/

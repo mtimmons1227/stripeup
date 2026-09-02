@@ -1190,12 +1190,13 @@ var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 var _hadHashOnLoad = window.location.hash.includes('access_token');
 var supabase = window.supabase.createClient('https://mqbxqtsnfzcmmzpbrxnx.supabase.co', SUPA_ANON_KEY);
 // RESEND_KEY removed &mdash; invitations handled server-side via Netlify function
-var RESEND_KEY = ''; // kept for cancellation emails only &mdash; set via Netlify env if needed
+// RESEND_KEY removed entirely &mdash; cancellation emails moved server-side to
+// netlify/functions/send-cancellation.js. No Resend key belongs in the browser.
 
 //    STATE                                                             
 var G = {
   games: [], officials: [], schedule: null, subs: [], draft: null,
-  user: null, orgId: null, orgName: null, tournaments: []
+  user: null, orgId: null, orgName: null, orgRole: null, tournaments: []
 };
 
 //    ERROR HANDLER                                                      
@@ -1288,13 +1289,10 @@ function sbGet(table, params) {
     .then(function(r) { return r.json(); });
 }
 
-function sbPost(table, data) {
-  return sbFetch('/rest/v1/' + table, {
-    method: 'POST',
-    headers: { 'Prefer': 'return=representation' },
-    body: JSON.stringify(data)
-  }).then(function(r) { return r.json(); });
-}
+// sbPost removed &mdash; it routed inserts through the Netlify proxy, whose response
+// does not parse as JSON, so callers saw a rejection even on success. Use
+// supabase.from(table).insert(...).select() instead.
+
 
 function sbPatch(table, params, data) {
   return sbFetch('/rest/v1/' + table + '?' + params, {
@@ -1463,11 +1461,43 @@ function doSignup() {
       err.style.display = 'block';
       btn.innerHTML = 'Create Account'; btn.disabled = false;
     } else {
-      // Create org record
+      // Create the org, then link this user to it. The link is what makes the org
+      // resolvable at login &mdash; without it the account is orphaned and cannot load.
+      var newUserId = result.data && result.data.user && result.data.user.id;
       var slug = org.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      sbPost('organizations', { name: org, slug: slug + '-' + Date.now(), plan: 'free' }).then(function() {
-        ok.textContent = 'Account created! Check your email to verify, then sign in.';
-        ok.style.display = 'block';
+      // Supabase client directly, NOT sbPost. sbPost routes through
+      // /.netlify/functions/supabase-proxy, whose response body does not parse as
+      // JSON — r.json() rejects even though the row is created. The old signup had
+      // no .catch, so the button sat on "Creating account..." forever while the org
+      // existed and the membership row never got written. Same proxy defect that
+      // createTournament() was moved off in April (see CLAUDE.md section 10).
+      supabase.from('organizations')
+        .insert({ name: org, slug: slug + '-' + Date.now(), plan: 'free' })
+        .select('id,name')
+        .then(function(res) {
+        if (res.error) {
+          throw new Error('Organization could not be created: ' + res.error.message);
+        }
+        var row = res.data && res.data[0];
+        if (!row || !row.id) {
+          throw new Error('Organization was not returned after insert.');
+        }
+        if (!newUserId) {
+          throw new Error('Account created but no user id was returned, so it could not be linked to "' + org + '". Contact support before signing in.');
+        }
+        return supabase.from('org_members')
+          .insert({ org_id: row.id, user_id: newUserId, role: 'owner' })
+          .then(function(m) {
+            if (m.error) {
+              throw new Error('Account and organization created, but linking them failed: ' + m.error.message);
+            }
+            ok.textContent = 'Account created! Check your email to verify, then sign in.';
+            ok.style.display = 'block';
+            btn.innerHTML = 'Create Account'; btn.disabled = false;
+          });
+      }).catch(function(e) {
+        err.textContent = e.message || 'Signup failed after account creation.';
+        err.style.display = 'block';
         btn.innerHTML = 'Create Account'; btn.disabled = false;
       });
     }
@@ -1566,56 +1596,70 @@ function showToast(msg, color) {
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function loadOrgAndShow() {
-  // Phase 1: fetch org using authenticated token
-  // Retry up to 3 times in case token isn't ready yet
+  // Resolve the current org through org_members &mdash; the authoritative user->org link.
+  // This used to be `organizations?select=id,name&limit=1` with no user filter, which
+  // returned whichever row Postgres handed back first. With more than one org that
+  // loaded another tenant's data. Never reintroduce an unfiltered org lookup.
   var attempts = 0;
+
   function tryLoadOrg() {
     attempts++;
-    sbFetch('/rest/v1/organizations?select=id,name&limit=1', { method: 'GET' })
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data && Array.isArray(data) && data.length && data[0].id) {
-          G.orgId = data[0].id;
-          G.orgName = data[0].name;
-          dm('Org: ' + G.orgName + ' (' + G.orgId.slice(0,8) + '...)');
-          finishLoad();
-        } else if (data && data.code === '42501' && attempts < 3) {
-          // Permission error - retry with delay
-          setTimeout(tryLoadOrg, 1000);
-        } else {
-          // Create org automatically
-          dm('Creating org...');
-          sbFetch('/rest/v1/organizations', {
-            method: 'POST',
-            body: JSON.stringify({ name: 'Timmons Foundation', slug: 'timmons', plan: 'free' })
-          }).then(function(r2) { return r2.json(); })
-            .then(function(res) {
-              var row = Array.isArray(res) ? res[0] : res;
-              if (row && row.id) {
-                G.orgId = row.id;
-                G.orgName = row.name;
-                dm('Org created: ' + G.orgId.slice(0,8));
-              } else if (res && res.code === '23505') {
-                // Duplicate - fetch again
-                sbFetch('/rest/v1/organizations?select=id,name&limit=1', { method: 'GET' })
-                  .then(function(r3) { return r3.json(); })
-                  .then(function(d3) {
-                    if (d3 && d3.length) { G.orgId = d3[0].id; G.orgName = d3[0].name; }
-                    finishLoad();
-                  });
-                return;
-              } else {
-                dm('Org create response: ' + JSON.stringify(res).slice(0,80));
+    supabase.auth.getUser().then(function(u) {
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if (!uid) {
+        if (attempts < 3) { setTimeout(tryLoadOrg, 1000); return; }
+        dm('No authenticated user'); orgFailed('Not signed in.'); return;
+      }
+      // Two plain queries rather than a PostgREST embed, so this does not depend on
+      // the relationship cache having picked up the org_members FK.
+      supabase.from('org_members')
+        .select('org_id,role')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .then(function(mres) {
+          if (mres.error) {
+            if (attempts < 3) { setTimeout(tryLoadOrg, 1000); return; }
+            dm('org_members lookup err: ' + mres.error.message);
+            orgFailed('Could not load your organization.'); return;
+          }
+          var mem = mres.data && mres.data[0];
+          if (!mem || !mem.org_id) {
+            dm('No org_members row for user ' + uid.slice(0,8));
+            orgFailed('Your account is not linked to an organization. Contact your administrator.');
+            return;
+          }
+          supabase.from('organizations')
+            .select('id,name')
+            .eq('id', mem.org_id)
+            .limit(1)
+            .then(function(ores) {
+              var org = !ores.error && ores.data && ores.data[0];
+              if (!org) {
+                dm('org row missing for ' + mem.org_id.slice(0,8));
+                orgFailed('Your organization record could not be loaded.'); return;
               }
+              G.orgId = org.id;
+              G.orgName = org.name;
+              G.orgRole = mem.role;
+              dm('Org: ' + G.orgName + ' (' + G.orgId.slice(0,8) + '...) role=' + mem.role);
               finishLoad();
-            }).catch(function(e) { dm('Org create err: '+e.message); finishLoad(); });
-        }
-      })
-      .catch(function(e) { dm('Org fetch err: '+e.message); finishLoad(); });
+            });
+        });
+    }).catch(function(e) { dm('Org fetch err: '+e.message); orgFailed('Could not load your organization.'); });
   }
-  function finishLoad() {
+
+  function orgFailed(msg) {
+    // No silent fallback. The old code created an org named 'Timmons Foundation' here
+    // regardless of who was signed in, which manufactured duplicate orgs.
+    G.orgId = null; G.orgName = null; G.orgRole = null;
+    if (typeof showToast === 'function') showToast(msg);
+    finishLoad(msg);
+  }
+
+  function finishLoad(errMsg) {
     var hdr = document.getElementById('org-name-hdr');
-    if (hdr) hdr.textContent = (G.orgName || 'Timmons Foundation') + ' - Tournament Management';
+    if (hdr) hdr.textContent = errMsg ? errMsg : ((G.orgName || 'StripeUp') + ' - Tournament Management');
     var ddb = document.getElementById('ddb');
     if (ddb) { ddb.textContent = G.orgId ? 'connected' : 'no-org'; ddb.style.color = G.orgId ? '#0f0' : '#fa0'; }
     applyDemoModeUI();
@@ -1734,11 +1778,11 @@ function loadTournamentStats(tid) {
     var pctColor = pct >= 100 ? '#1A7A4A' : pct > 0 ? '#C9A84C' : '#6B7A99';
     var el;
     el = document.getElementById('tile-pct-' + tid);
-    if (el) { el.textContent = totalNeeded > 0 ? pct + '%' : '&mdash;'; el.style.color = pctColor; }
+    if (el) { el.textContent = totalNeeded > 0 ? pct + '%' : '\u2014'; el.style.color = pctColor; }
     el = document.getElementById('tile-confirmed-' + tid);
     if (el) { el.textContent = slotsFilled; el.style.color = slotsFilled > 0 ? '#1A7A4A' : '#6B7A99'; }
     el = document.getElementById('tile-open-' + tid);
-    if (el) { el.textContent = totalNeeded > 0 ? slotsOpen : '&mdash;'; el.style.color = slotsOpen > 0 ? '#C0392B' : '#1A7A4A'; }
+    if (el) { el.textContent = totalNeeded > 0 ? slotsOpen : '\u2014'; el.style.color = slotsOpen > 0 ? '#C0392B' : '#1A7A4A'; }
     el = document.getElementById('tile-responded-' + tid);
     if (el) { el.textContent = uniqueOfficials; el.style.color = uniqueOfficials > 0 ? '#1B2A4A' : '#6B7A99'; }
 
@@ -1860,7 +1904,7 @@ function loadTournamentStats(tid) {
     // â”€â”€ PAY ESTIMATE â”€â”€
     el = document.getElementById('pay-estimate-' + tid);
     if (el) {
-      el.textContent = ppg > 0 && gamesCount > 0 ? '$' + (totalPay).toLocaleString() : '&mdash;';
+      el.textContent = ppg > 0 && gamesCount > 0 ? '$' + (totalPay).toLocaleString() : '\u2014';
       if (gamesCount > 0 && ppg > 0) el.title = gamesCount + ' games Ã— ' + opg + ' off/game Ã— $' + ppg;
     }
 
@@ -2424,7 +2468,7 @@ function doSendSchedules() {
   var btn    = document.getElementById('send-schedules-btn');
   var bodyEl = document.getElementById('send-schedules-body');
   btn.disabled = true;
-  btn.textContent = 'Sending&hellip;';
+  btn.textContent = 'Sending\u2026';
   fetch('/.netlify/functions/send-schedules', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -3024,7 +3068,7 @@ function createTournament() {
     // Single tournament &mdash; original behavior
     var code = name.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.random().toString(36).slice(2, 6).toUpperCase();
     var data = Object.assign({}, baseData, { name: name, date: date, signup_code: code });
-    if (btn) { btn.textContent = 'Creating&hellip;'; btn.disabled = true; }
+    if (btn) { btn.textContent = 'Creating\u2026'; btn.disabled = true; }
     supabase.from('tournaments').insert(data).then(function(result) {
       if (btn) { btn.textContent = 'Create Tournament'; btn.disabled = false; }
       if (result.error) { err.textContent = 'Failed: ' + result.error.message; err.style.display = 'block'; return; }
@@ -3050,7 +3094,7 @@ function createTournament() {
     dayNames.push(dayName);
   }
 
-  if (btn) { btn.textContent = 'Creating&hellip;'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Creating\u2026'; btn.disabled = true; }
   var createdIds = [];
 
   function insertNext(idx) {
@@ -3484,7 +3528,15 @@ function doLoad(type) {
     var gc = document.getElementById('gc');
     var gcb = document.getElementById('gcb');
     if (gc) gc.style.display = 'block';
+    var droppedRows = (typeof rowsBefore === 'number') ? (rowsBefore - rows.length) : 0;
     var summary = 'Imported ' + rows.length + ' games across ' + courts.length + ' courts' + (importTournDate ? ' for ' + importTournDate : '') + ' (court names: ' + courts.join(', ') + ')';
+    if (droppedRows > 0) {
+      // The date filter drops non-matching rows one by one. Previously this was
+      // logged only to the DEV bar, so a file with a few bad dates imported
+      // short and said nothing about it.
+      summary += ' \u2014 ' + droppedRows + ' row' + (droppedRows === 1 ? '' : 's') +
+                 ' skipped (date did not match ' + importTournDate + ')';
+    }
     if (gcb) gcb.innerHTML = '<b>' + summary + '</b>';
 
     var gStatus = document.getElementById('g-status');
@@ -5130,122 +5182,195 @@ function calculateBlocks(tid, gameRows, payPerGame, mode, opg) {
   mode = mode || 'hybrid';
   var pay = parseFloat(payPerGame) || 0;
   var officialsPerGame = parseInt(opg) || 1;
+
+  // ---- the global slot grid -------------------------------------------------
+  // Contiguity is defined against every distinct start time in the tournament,
+  // not against a court's own list. Two games on a court are adjacent only if
+  // their slot indices differ by exactly 1.
+  var slotMins = [];
+  gameRows.forEach(function (g) {
+    var m = toMin(g.time_slot);
+    if (slotMins.indexOf(m) === -1) slotMins.push(m);
+  });
+  slotMins.sort(function (a, b) { return a - b; });
+  var slotIndex = {};
+  slotMins.forEach(function (m, i) { slotIndex[m] = i; });
+  var lastSlot = slotMins.length - 1;
+
+  // ---- group by court -------------------------------------------------------
   var byCourt = {};
-  gameRows.forEach(function(g) {
+  gameRows.forEach(function (g) {
     var ct = g.court || 'Court 1';
     if (!byCourt[ct]) byCourt[ct] = [];
     byCourt[ct].push(g);
   });
-  var courts = Object.keys(byCourt).sort(function(a,b){
-    return (a||'').localeCompare(b||'',undefined,{numeric:true});
+  var courts = Object.keys(byCourt).sort(function (a, b) {
+    return (a || '').localeCompare(b || '', undefined, { numeric: true });
   });
-  courts.forEach(function(ct){
-    byCourt[ct].sort(function(a,b){return toMin(a.time_slot)-toMin(b.time_slot);});
+  courts.forEach(function (ct) {
+    byCourt[ct].sort(function (a, b) { return toMin(a.time_slot) - toMin(b.time_slot); });
   });
 
-  function courtNum(ct){var m=(ct||'').match(/\d+/);return m?m[0]:ct.charAt(0);}
-  function blockLetter(i){return String.fromCharCode(65+i);}
+  function courtNum(ct) { var m = (ct || '').match(/\d+/); return m ? m[0] : String(ct).charAt(0); }
+  function blockLetter(i) { return String.fromCharCode(65 + i); }
 
-  // Hardened hybrid: NEVER produces a 1-game block
-  function hybridSizes(total){
-    if(total<=0) return [];
-    if(total===1) return [1]; // shouldn't happen but guard
-    if(total===2) return [2];
-    if(total===3) return [3];
-    if(total===4) return Math.random()<0.5?[2,2]:[4]; // 2+2 or 4
-    // For 5+: randomly mix W2 and W3, enforce no remainder of 1
-    var sizes=[], rem=total, tries=0;
-    while(rem>0){
-      if(rem===1){
-        // Absorb into last block &mdash; never allow 1-game block
-        if(sizes.length>0) sizes[sizes.length-1]++;
-        rem=0;
-      } else if(rem===2){ sizes.push(2); rem=0;
-      } else if(rem===3){ sizes.push(3); rem=0;
-      } else if(rem===4){
-        // 4 can go as 2+2 or 3+1(bad) &mdash; always do 2+2 or leave for next iter
-        sizes.push(2); rem-=2;
-      } else {
-        var pick = Math.random()<0.5?2:3;
-        // Check if this pick would leave rem-pick===1
-        if(rem-pick===1){
-          // Switch pick to avoid orphan
-          pick = pick===2?3:2;
-          if(rem-pick===1) pick=rem; // take all remaining
-        }
-        sizes.push(pick); rem-=pick;
-      }
-      if(++tries>500) break;
+  // ---- split a court's games into contiguous runs ---------------------------
+  function contiguousRuns(games) {
+    var runs = [], cur = [];
+    for (var i = 0; i < games.length; i++) {
+      if (cur.length === 0) { cur.push(games[i]); continue; }
+      var prevIdx = slotIndex[toMin(cur[cur.length - 1].time_slot)];
+      var thisIdx = slotIndex[toMin(games[i].time_slot)];
+      if (thisIdx === prevIdx + 1) cur.push(games[i]);
+      else { runs.push(cur); cur = [games[i]]; }
     }
-    // Final validation &mdash; if any size is 1, merge it
-    for(var i=0;i<sizes.length;i++){
-      if(sizes[i]===1){
-        if(i>0){sizes[i-1]++;sizes.splice(i,1);i--;}
-        else if(i<sizes.length-1){sizes[i+1]++;sizes.splice(i,1);i--;}
+    if (cur.length) runs.push(cur);
+    return runs;
+  }
+
+  // ---- decompose a run length into block sizes -------------------------------
+  // Every n >= 2 is expressible in 2s and 3s. Never emits a 1.
+  // allowFour: only true for the run that ends at the final slot of the day.
+  function runSizes(n, allowFour) {
+    if (n < 2) return null;                       // orphan — caller handles
+    if (n === 2) return [2];
+    if (n === 3) return [3];
+    if (n === 4) return allowFour ? [4] : [2, 2];
+    if (mode === 'w2') {
+      var s2 = [], r2 = n;
+      while (r2 > 0) {
+        if (r2 === 3) { s2.push(3); r2 = 0; }
+        else if (r2 === 2) { s2.push(2); r2 = 0; }
+        else { s2.push(2); r2 -= 2; }
       }
+      return s2;
     }
-    // Enforce actual mix when total allows it (avoid all-same)
-    if(total>=5&&sizes.length>1){
-      var h2=sizes.some(function(s){return s===2;});
-      var h3=sizes.some(function(s){return s>=3;});
-      if(!h2||!h3) return hybridSizes(total);
+    if (mode === 'w3') {
+      var s3 = [], r3 = n;
+      while (r3 > 0) {
+        if (r3 === 4) { s3.push(2); s3.push(2); r3 = 0; }
+        else if (r3 <= 3) { s3.push(r3); r3 = 0; }
+        else { s3.push(3); r3 -= 3; }
+      }
+      return s3;
+    }
+    // hybrid: deterministic mix of 3s and 2s, remainder never 1
+    var sizes = [], rem = n, useThree = true;
+    while (rem > 0) {
+      if (rem === 2 || rem === 3) { sizes.push(rem); rem = 0; break; }
+      if (rem === 4) { sizes.push(2); sizes.push(2); rem = 0; break; }
+      var take = useThree ? 3 : 2;
+      if (rem - take === 1) take = (take === 3 ? 2 : 3);
+      sizes.push(take); rem -= take; useThree = !useThree;
+    }
+    // End-of-day sweetener: fold a trailing 2 into the previous 2 to make a 4.
+    if (allowFour && sizes.length >= 2 &&
+        sizes[sizes.length - 1] === 2 && sizes[sizes.length - 2] === 2) {
+      sizes.splice(sizes.length - 2, 2, 4);
     }
     return sizes;
   }
 
-  function fixedSizes(total,sz){
-    if(total<=0) return [];
-    var sizes=[],rem=total;
-    while(rem>0){
-      if(rem===1){
-        // Never a 1-game block &mdash; absorb into previous
-        if(sizes.length>0) sizes[sizes.length-1]++;
-        else sizes.push(2); // shouldn't happen
-        rem=0;
-      } else if(rem<sz&&rem>=2){
-        sizes.push(rem); rem=0;
-      } else if(rem<2){
-        if(sizes.length>0) sizes[sizes.length-1]+=rem;
-        rem=0;
-      } else {
-        sizes.push(sz); rem-=sz;
-      }
-    }
-    return sizes;
-  }
+  // ---- build ----------------------------------------------------------------
+  var blocks = [];
+  var orphans = [];          // single games that could not form a legal block
+  var courtChanges = 0;
 
-  var blocks=[];
-  courts.forEach(function(ct){
-    var games=byCourt[ct], total=games.length, cNum=courtNum(ct);
-    if(total===0) return;
-    var sizes = mode==='w2'?fixedSizes(total,2):mode==='w3'?fixedSizes(total,3):hybridSizes(total);
-    var gi=0;
-    sizes.forEach(function(sz,bi){
-      if(sz<1) return;
-      var bg=games.slice(gi,gi+sz);
-      if(!bg.length) return;
-      blocks.push({
-        tournament_id:tid, org_id:G.orgId,
-        block_name:cNum+blockLetter(bi),
-        block_color:bi%2===0?'even':'odd',
-        game_ids:JSON.stringify(bg.map(function(g){return g.game_id;})),
-        game_count:sz,
-        officials_needed:officialsPerGame,
-        pattern:sz===2?'W2':sz===3?'W3':'W'+sz,
-        court_first:ct, court_second:ct,
-        start_time:bg[0].time_slot, end_time:bg[bg.length-1].time_slot,
-        sit_slots:JSON.stringify([]),
-        total_pay:sz*pay*officialsPerGame, status:'open', is_custom:false
+  courts.forEach(function (ct) {
+    var cNum = courtNum(ct);
+    var runs = contiguousRuns(byCourt[ct]);
+    var letterSeq = 0;
+
+    runs.forEach(function (run) {
+      var endsDay = slotIndex[toMin(run[run.length - 1].time_slot)] === lastSlot;
+      var sizes = runSizes(run.length, endsDay);
+
+      if (!sizes) {                                  // run.length === 1
+        orphans.push({ court: ct, game: run[0] });
+        return;
+      }
+
+      var gi = 0;
+      sizes.forEach(function (sz) {
+        var bg = run.slice(gi, gi + sz);
+        gi += sz;
+        if (!bg.length) return;
+        blocks.push({
+          tournament_id: tid,
+          block_name: cNum + blockLetter(letterSeq++),
+          block_color: letterSeq % 2 === 1 ? 'even' : 'odd',
+          game_ids: JSON.stringify(bg.map(function (g) { return g.game_id; })),
+          game_count: bg.length,
+          pattern: 'W' + bg.length,
+          court_first: ct,
+          court_second: ct,
+          start_time: bg[0].time_slot,
+          end_time: bg[bg.length - 1].time_slot,
+          sit_slots: JSON.stringify([]),
+          total_pay: bg.length * pay * officialsPerGame,
+          officials_needed: officialsPerGame,
+          status: 'open',
+          is_custom: false
+        });
       });
-      gi+=sz;
     });
   });
-  dm('Blocks: '+blocks.length+' | mode:'+mode);
+
+  // ---- orphan repair --------------------------------------------------------
+  // Court lock is primary, so a mid-day orphan cannot be rescued by switching
+  // courts. At the end of the day a court change is permitted, so try to attach
+  // the orphan to a block in an adjacent slot that still has room.
+  var stillOrphaned = [];
+  orphans.forEach(function (o) {
+    var oIdx = slotIndex[toMin(o.game.time_slot)];
+    var repaired = false;
+    if (oIdx === lastSlot || oIdx === lastSlot - 1) {
+      for (var i = 0; i < blocks.length; i++) {
+        var b = blocks[i];
+        var bStart = slotIndex[toMin(b.start_time)];
+        var bEnd = slotIndex[toMin(b.end_time)];
+        var adjacent = (oIdx === bEnd + 1) || (oIdx === bStart - 1);
+        if (adjacent && b.game_count < 4) {
+          var ids = JSON.parse(b.game_ids);
+          if (oIdx === bEnd + 1) { ids.push(o.game.game_id); b.end_time = o.game.time_slot; }
+          else { ids.unshift(o.game.game_id); b.start_time = o.game.time_slot; }
+          b.game_ids = JSON.stringify(ids);
+          b.game_count = ids.length;
+          b.pattern = 'W' + ids.length;
+          b.total_pay = ids.length * pay * officialsPerGame;
+          if (b.court_first !== o.court) { b.court_second = o.court; courtChanges++; }
+          repaired = true;
+          break;
+        }
+      }
+    }
+    if (!repaired) stillOrphaned.push(o);
+  });
+
+  // ---- validate -------------------------------------------------------------
+  // Assert the two invariants rather than trusting the construction.
+  var violations = [];
+  blocks.forEach(function (b) {
+    var ids = JSON.parse(b.game_ids);
+    if (ids.length < 2) violations.push(b.block_name + ': only ' + ids.length + ' game');
+    var span = slotIndex[toMin(b.end_time)] - slotIndex[toMin(b.start_time)];
+    if (span !== ids.length - 1) {
+      violations.push(b.block_name + ': spans ' + (span + 1) + ' slots but holds ' + ids.length + ' games (gap inside block)');
+    }
+  });
+
+  calculateBlocks.lastReport = {
+    blocks: blocks.length,
+    orphans: stillOrphaned.map(function (o) { return o.court + ' @ ' + o.game.time_slot; }),
+    courtChanges: courtChanges,
+    violations: violations
+  };
+
   return blocks;
 }
 
-function saveBlocksToDB(tid, blocks) {
-  if(!blocks||!blocks.length){dm('No blocks to save');return;}
+function saveBlocksToDB(tid, blocks, done) {
+  if(!blocks||!blocks.length){dm('No blocks to save');if(typeof done==='function')done(0);return;}
   // Use Supabase client directly &mdash; proxy strips WHERE clause from DELETE &rarr; blocks would stack
   supabase.from('available_blocks').delete().eq('tournament_id', tid)
     .then(function(){
@@ -5257,6 +5382,7 @@ function saveBlocksToDB(tid, blocks) {
           dm('Blocks saved: '+saved);
           var el=document.getElementById('sched-status-'+tid);
           if(el) el.textContent=saved+' blocks available';
+          if(typeof done==='function') done(saved);
           return;
         }
         var batch=batches[idx++];
@@ -5268,7 +5394,7 @@ function saveBlocksToDB(tid, blocks) {
           }).catch(function(e){dm('Block err: '+e.message);nb();});
       }
       nb();
-    }).catch(function(e){dm('Block delete err: '+e.message);});
+    }).catch(function(e){dm('Block delete err: '+e.message);if(typeof done==='function')done(0);});
 }
 
 function saveGamesToDB(tid, gameRows) {
@@ -5311,10 +5437,37 @@ function saveGamesToDB(tid, gameRows) {
         var pay = tourn ? (tourn.pay_per_game||0) : 0;
         var opg4 = tourn ? (parseInt(tourn.officials_per_game)||1) : 1;
         var blocks = calculateBlocks(tid, gameRows, pay, 'hybrid', opg4);
-        saveBlocksToDB(tid, blocks);
+        // Refresh the dashboard once the blocks land. Without this the tournament
+        // card kept showing "No games yet" and the nav pills stayed stale until a
+        // manual page reload, even though the import had succeeded.
+        saveBlocksToDB(tid, blocks, function(){
+          if (typeof loadTournaments === 'function') {
+            loadTournaments();
+          } else {
+            if (typeof loadTournamentStats === 'function') loadTournamentStats(tid);
+            if (typeof updateNavCounts === 'function') updateNavCounts();
+          }
+        });
         if (statusEl) {
-          statusEl.textContent = saved + ' games saved. ' + blocks.length + ' blocks calculated.';
-          statusEl.style.color = '#1A7A4A';
+          var rpt = calculateBlocks.lastReport || {};
+          var msg = saved + ' games saved. ' + blocks.length + ' blocks calculated.';
+          if (rpt.orphans && rpt.orphans.length) {
+            // Not foldable into a legal block without creating a 1-game
+            // assignment. Surface it so the assigner can place it by hand in
+            // Review Blocks rather than have it silently go unstaffed.
+            msg += '  \u26a0 ' + rpt.orphans.length + ' game' +
+                   (rpt.orphans.length === 1 ? '' : 's') +
+                   ' could not be blocked (isolated in the schedule): ' +
+                   rpt.orphans.join(', ') + '. Place them manually in Review Blocks.';
+            statusEl.style.color = '#A0620A';
+          } else {
+            statusEl.style.color = '#1A7A4A';
+          }
+          if (rpt.violations && rpt.violations.length) {
+            msg += '  \u26a0 BLOCK RULE VIOLATION: ' + rpt.violations.join('; ');
+            statusEl.style.color = '#C0392B';
+          }
+          statusEl.textContent = msg;
         }
         // Update badge
         var hdrG = document.getElementById('hdr-games-' + tid);
@@ -5563,7 +5716,7 @@ function openInviteModal(tid, skipReminderCheck) {
   }
   G_INVITE_TOURN = t;
 
-  document.getElementById('invite-modal-title').textContent = 'Send Invitations &mdash; ' + t.name;
+  document.getElementById('invite-modal-title').textContent = 'Send Invitations \u2014 ' + t.name;
 
   document.getElementById('invite-tourn-info').innerHTML =
     '<b style="color:#C9A84C">' + t.name + '</b>&nbsp;&nbsp;|&nbsp;&nbsp;' +
@@ -5940,7 +6093,7 @@ function resendToOfficial(officialId, tid, evt) {
   var tourn = (G.allTournaments||[]).find(function(t){return t.id===tid;});
   if (!tourn) { alert('Tournament not found.'); return; }
   var btn = evt && evt.target;
-  if (btn) { btn.disabled=true; btn.textContent='Sending&hellip;'; }
+  if (btn) { btn.disabled=true; btn.textContent='Sending\u2026'; }
   fetch('/api/send-invites', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -5962,47 +6115,29 @@ function resendToOfficial(officialId, tid, evt) {
 }
 
 function sendCancellationEmails(tid, reason) {
-  // Get all officials who responded to this tournament
-  sbFetch('/rest/v1/availability?tournament_id=eq.' + tid + '&select=official_name,official_email,id', { method: 'GET' })
-    .then(function(r){ return r.json(); })
-    .then(function(responses) {
-      var officials = (Array.isArray(responses) ? responses : [])
-        .filter(function(a){ return a.official_email; });
-      if (!officials.length) { dm('No officials to notify'); return; }
-      var tourn = G.tournaments.find(function(t){ return t.id === tid; });
-      var tname = tourn ? tourn.name : 'Tournament';
-      dm('Sending cancellation emails to ' + officials.length + ' officials...');
-      officials.forEach(function(a) {
-        var html =
-          '<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">' +
-          '<div style="background:#0E1C35;padding:20px;text-align:center">' +
-          '<div style="font-size:24px;font-weight:900;color:#fff">Stripe<span style="color:#C9A84C">Up</span></div>' +
-          '</div>' +
-          '<div style="padding:24px">' +
-          '<p>Hi ' + (a.official_name || 'Official') + ',</p>' +
-          '<p>We regret to inform you that the following tournament has been <strong>cancelled</strong>:</p>' +
-          '<div style="background:#FDECEA;border-left:4px solid #C0392B;padding:14px;margin:16px 0;border-radius:4px">' +
-          '<div style="font-size:18px;font-weight:700;color:#C0392B">' + tname + '</div>' +
-          '</div>' +
-          (reason ? '<p><strong>Reason:</strong> ' + reason + '</p>' : '') +
-          '<p>We apologize for any inconvenience. Thank you for your willingness to work this event.</p>' +
-          '<p>You will continue to receive invitations to future tournaments via StripeUp.</p>' +
-          '<p style="font-size:12px;color:#999">Sent via StripeUp &mdash; stripeup.com</p>' +
-          '</div></div>';
-        fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (window.RESEND_KEY||'') },
-          body: JSON.stringify({
-            from: 'StripeUp <onboarding@resend.dev>',
-            to: [a.official_email],
-            subject: 'Tournament Cancelled: ' + tname,
-            html: html
-          })
-        }).then(function(r) {
-          dm('Cancel email ' + (r.ok ? 'sent' : 'failed') + ': ' + a.official_email);
-        }).catch(function(e) { dm('Cancel email error: ' + e.message); });
+  // Server-side now. The previous version could never have delivered anything:
+  // it authenticated with window.RESEND_KEY (hardcoded to '' at the top of this
+  // file, so every call was a 401), sent from Resend's sandbox address
+  // onboarding@resend.dev, and pulled recipients from `availability` — a table
+  // nothing writes to. The function reads confirmed claims and outstanding invite
+  // tokens with the service key instead.
+  return fetch('/.netlify/functions/send-cancellation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tournament_id: tid, reason: reason || null })
+  }).then(function(r) {
+    if (!r.ok) {
+      return r.text().then(function(t) {
+        throw new Error('send-cancellation ' + r.status + ': ' + (t || 'request failed'));
       });
-    });
+    }
+    return r.json();
+  }).then(function(res) {
+    dm('Cancellation emails \u2014 sent:' + res.sent +
+       ' skipped(test):' + res.skipped +
+       ' errors:' + ((res.errors && res.errors.length) || 0));
+    return res;
+  });
 }
 
 function archiveTournament(tid) {
@@ -6342,9 +6477,43 @@ function toggleCancelNotify(){
 function confirmCancelTournament(){
   var tid=document.getElementById('cancel-tourn-id')?document.getElementById('cancel-tourn-id').value:'';
   if(!tid){closeModal('cancel-tourn-modal');return;}
-  sbFetch('/rest/v1/tournaments?id=eq.'+tid,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'cancelled'})})
-  .then(function(){closeModal('cancel-tourn-modal');loadTournaments();})
-  .catch(function(e){alert('Error: '+e.message);});
+  // The modal collects a reason and a "notify officials" toggle. Both used to be
+  // thrown away: the reason was never stored and the toggle drove nothing.
+  var rEl=document.getElementById('cancel-reason');
+  var reason=rEl?rEl.value.trim():'';
+  var track=document.getElementById('cancel-notify-track');
+  var notify=track?track.getAttribute('data-on')==='true':false;
+  var btn=document.getElementById('cancel-confirm-btn');
+  if(btn){btn.disabled=true;}
+  // Supabase client, not sbFetch: the proxy strips the query string from PATCH,
+  // so the old call sent an UPDATE with no WHERE clause (see section 10 of CLAUDE.md).
+  supabase.from('tournaments').update({
+    status:'cancelled',
+    cancelled_at:new Date().toISOString(),
+    cancelled_reason:reason||null
+  }).eq('id',tid)
+  .then(function(r){
+    if(r.error) throw new Error(r.error.message);
+    if(!notify){
+      closeModal('cancel-tourn-modal');loadTournaments();
+      if(typeof showToast==='function') showToast('Tournament cancelled. Officials were not notified.');
+      return;
+    }
+    return sendCancellationEmails(tid,reason).then(function(res){
+      closeModal('cancel-tourn-modal');loadTournaments();
+      var failed=(res.errors&&res.errors.length)||0;
+      if(typeof showToast==='function'){
+        showToast('Cancelled \u2014 '+res.sent+' official'+(res.sent===1?'':'s')+' notified'+
+                  (failed?', '+failed+' failed':'')+
+                  (res.skipped?' ('+res.skipped+' test address'+(res.skipped===1?'':'es')+' skipped)':''));
+      }
+    });
+  })
+  .catch(function(e){
+    if(btn){btn.disabled=false;}
+    alert('Cancel failed: '+e.message);
+  })
+  .then(function(){ if(btn){btn.disabled=false;} });
 }
 function openCancelModal(tid,tname){
   var el=document.getElementById('cancel-tourn-id');

@@ -20,7 +20,11 @@ WHERE t.is_taxable = true AND c.status = 'confirmed' AND c.pay_amount > 0
 
 The 1099 Payments report — the tax-compliance feature — is structurally incapable of returning data. It has presumably always shown an empty table, and that would have been read as "nobody hit $600 yet."
 
-**Fix:** write `pay_amount` at claim time (`block.game_count × tournament.pay_per_game`), or change the view to compute pay by joining `available_blocks` and `tournaments` rather than trusting a denormalized column nothing populates. The second is better — it's the same "second source of truth" problem as `games.org_id`.
+**FIXED (Sept 2, 2026)** — migration `fix_v_1099_report_compute_pay_and_games` replaced the view. Pay is now computed from the authoritative path (`available_blocks.game_count × tournaments.pay_per_game`) instead of read from a denormalized column nothing populates, and the `pay_amount > 0` filter is gone.
+
+**A second bug in the same view was found while fixing this:** `count(c.id) AS total_games` counted *claims* — i.e. claimed blocks — not games. A claim covers a block containing `game_count` games, so the 1099 would have under-reported games roughly 3-4x even once pay worked. Now `sum(b.game_count)`.
+
+Column names, types and order are unchanged, so `run1099Report()` in index.html needed no edit. Verified in a transaction with throwaway rows (one official, two blocks of 4 and 3 games at $35/game): the view returned 7 games and $245, then the transaction was rolled back — live counts confirmed unchanged afterwards (1 org, 88 officials, 0 everywhere else). The old definition is preserved in the migration comment for revert.
 
 ### C2. Scratching an official silently does nothing
 

@@ -34,9 +34,20 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 ## 3. Recent Changes Log
 
+### September 2, 2026 (night — tenancy fix: org_members)
+The cross-tenant bug from the evening session is now **fixed**, not just documented.
+- **DB** — Migration `add_org_members_tenancy_link` creates `public.org_members (org_id, user_id, role, created_at)`, PK `(org_id, user_id)`, FKs to `organizations` and `auth.users` both `ON DELETE CASCADE`, with indexes on each FK. `role` is checked against `owner|admin|assigner|viewer`. This is the user→org link the schema never had.
+- **DB** — Backfilled: every existing auth user joined the only existing org as `owner`. Verified — `marv_timmons@yahoo.com` → Timmons Foundation (`2270e1d1-…`), role `owner`, one row.
+- **DB** — Added `public.current_org_ids()` — a `STABLE SECURITY DEFINER` function returning the caller's org ids from `org_members`, `search_path` pinned to `public`, execute granted to `authenticated` only. This is what the Phase 4 RLS policies key off, so a policy on another table doesn't need its own read on `org_members`.
+- **index.html — `loadOrgAndShow()` rewritten.** Was `organizations?select=id,name&limit=1` with no user filter. Now: `supabase.auth.getUser()` → `org_members` filtered by `user_id` (ordered by `created_at`, limit 1) → `organizations` by that id. Two plain queries rather than a PostgREST embed, so it does not depend on the relationship cache having picked up the new FK. Retries up to 3× while the auth token settles, as before.
+- **index.html — the silent fallback is gone.** The old code created an org literally named "Timmons Foundation" (slug `timmons`) whenever the lookup returned nothing, regardless of who was signed in — that is how duplicate orgs got manufactured. A user with no `org_members` row now gets an explicit "Your account is not linked to an organization" message and `G.orgId` stays null (`loadTournaments()` already guards on that). The header fallback string is now "StripeUp", not a tenant name.
+- **index.html — `doSignup()` now links the account.** After `supabase.auth.signUp()` it creates the org, then inserts `org_members {org_id, user_id, role:'owner'}` using the returned `user.id`. Every failure path surfaces: org-create failure, missing user id, and link failure each throw with a distinct message instead of reporting success. Previously the auth user and the org were two unrelated inserts and nothing joined them.
+- **index.html** — `G` gains `orgRole`, populated from the membership row, for future role-gated UI.
+- **Verification** — `node --check` passed on both inline script blocks. No unfiltered org lookup remains in the file (only comments referencing the old one). Grants confirmed: `anon` and `authenticated` both hold SELECT/INSERT on `org_members`, so login and signup work with RLS still off. A live REST check by curl was not possible — the cloud container's egress allowlist blocks `*.supabase.co` — so the browser path is verified by the SQL shape and grants, not by an HTTP round trip. **Confirm at first login that the header shows "Timmons Foundation".**
+
 ### September 2, 2026 (night — schema/code audit + fixes)
 Full audit written to `docs/specs/schema-code-audit-2026-09-02.md`. Spec for the platform-wide officials model written to `docs/specs/platform-wide-officials-spec.md`. Findings and fixes:
-- **🔴 C1 — the 1099 report has never been able to return a row.** `v_1099_report` filters on `c.pay_amount > 0`, but **`claims.pay_amount` is never written** — zero occurrences of the string in `index.html` or `self-schedule.html`; both claim-insert paths (`self-schedule.html:995`, `index.html:5873`) omit it, and all four pre-wipe claims carried `0`. The tax-compliance report is structurally empty and an empty table reads as "nobody hit $600". **NOT YET FIXED** — needs a decision: write `pay_amount` at claim time, or (recommended) change the view to compute pay by joining `available_blocks.game_count × tournaments.pay_per_game`, which removes the denormalized column rather than populating it.
+- **C1 — the 1099 report has never been able to return a row. FIXED.** `v_1099_report` filters on `c.pay_amount > 0`, but **`claims.pay_amount` is never written** — zero occurrences of the string in `index.html` or `self-schedule.html`; both claim-insert paths (`self-schedule.html:995`, `index.html:5873`) omit it, and all four pre-wipe claims carried `0`. The tax-compliance report is structurally empty and an empty table reads as "nobody hit $600". **FIXED** via migration `fix_v_1099_report_compute_pay_and_games`: the view now computes pay as `sum(available_blocks.game_count × tournaments.pay_per_game)` and the `pay_amount > 0` filter is gone — the denormalized column is bypassed rather than populated. **A second bug surfaced in the same view:** `count(c.id) AS total_games` counted claimed *blocks*, not games, so the report would have under-stated games ~3-4x even with pay working; now `sum(b.game_count)`. Column names/types/order unchanged, so `run1099Report()` needed no edit. Verified in a rolled-back transaction (2 blocks of 4 and 3 games at $35 → 7 games, $245); live counts confirmed unchanged after rollback. Old definition preserved in the migration comment.
 - **C2 — scratching an official silently did nothing. FIXED.** `index.html:5458` sent a `notify_official` field; `assigner_scratches` has no such column, so PostgREST rejected the entire insert with a 400 while `.then()` never checked `r.ok` and reported success. The scratched official stayed fully eligible and would be re-invited. Removed the field and added an `r.ok` check that surfaces the error.
 - **C3 — `availability.official_id` is never populated.** Read at `3364, 5093, 6217`; written by no insert path. Always null, so the scheduler substitutes synthetic IDs (`'O001'`) and the link back to the real `officials` row is permanently broken. **NOT YET FIXED** — folded into spec Phase 1, since the commitment ledger keys on `official_id`.
 - **H1 — block re-save corrupted slots and pay. FIXED.** `brSaveBlocksDB` omitted `officials_needed` and computed `total_pay` without the `× officials_per_game` factor that `calculateBlocks` applies. Blocks created by CSV import were correct; the same blocks re-saved from Review Blocks came back with `officials_needed = NULL` and half the pay. Compounding it, read sites disagreed on the fallback — `|| 1` at 1725/1818/3150/3165/3216 but `|| 0` at 2025/2030/4363 — so after a re-save the dashboard counted those blocks as zero slots and zero dollars while the block grid counted one. Added `officials_needed`, multiplied `total_pay` by `opg`, and normalized the three `|| 0` sites to `|| 1`.
@@ -332,7 +343,6 @@ Full audit written to `docs/specs/schema-code-audit-2026-09-02.md`. Spec for the
 
 ## 7. Known Issues ❌
 
-- **🔴 The 1099 report cannot return a row (C1).** `v_1099_report` requires `claims.pay_amount > 0`; nothing ever writes `pay_amount`. Tax compliance is non-functional and fails silently as "nobody earned $600". Decision needed: populate the column at claim time, or rewrite the view to compute pay from `available_blocks.game_count × tournaments.pay_per_game` (recommended — one less denormalized copy).
 - **`availability.official_id` is never written (C3).** Always null; the scheduler falls back to synthetic IDs and the link to the real official is lost. Blocks the commitment ledger in the spec.
 - **`tournaments.courts` is never written (H3)** but is rendered unguarded — officials see "null courts" on the self-schedule banner (`self-schedule.html:453, 472`).
 - **`self-schedule.html:561`** carries a comment claiming `tournament_day_id` doesn't exist on `available_blocks`. It does.
@@ -340,8 +350,6 @@ Full audit written to `docs/specs/schema-code-audit-2026-09-02.md`. Spec for the
 - SMS blocked — Twilio A2P 10DLC upgrade required
 - **Stray duplicate `send-invites.js`** at repo root (added Aug 7, 2026) diverges from the deployed `netlify/functions/send-invites.js` (extra CORS headers + env-var validation) and is not wired up anywhere — `netlify.toml` points `[functions] directory` at `netlify/functions/` only. Dead file; should be deleted or reconciled to avoid someone editing the wrong copy.
 - RLS disabled on all 12 public tables (`officials`, `claims`, `invite_tokens` included) — anon key has full read/write. See section 12.
-- **🔴 No user→org relationship exists in the schema.** `organizations` has no `owner_id`/`user_id` and there is no membership table. `loadOrgAndShow()` (index.html:1573) picks the org with `organizations?select=id,name&limit=1` — whichever row comes back first — and `doSignup()` (index.html:1468) creates the auth user and org as unrelated inserts. With more than one org in the table, every account loads the same first org: while "Game Time Sports" existed (Sept 2), that account would have loaded Timmons Foundation's 88 officials, tournaments and 1099 data. Currently dormant only because there is one org and one user again. **RLS will not fix this** — the client is asking for the wrong org, and policies keyed to the org the client already chose would authorize the leak. Fix order: add `org_members(user_id, org_id, role)` → backfill → resolve org through it in `loadOrgAndShow()` and write the membership row in `doSignup()` → *then* write RLS policies keyed off `auth.uid()` via a `SECURITY DEFINER` lookup.
-- **Hardcoded org fallback** (index.html:1590) — if the org lookup returns nothing, the app creates an org literally named "Timmons Foundation" with slug `timmons`, regardless of who is signed in. Any orphaned account triggers this.
 
 ---
 
@@ -351,6 +359,7 @@ Full audit written to `docs/specs/schema-code-audit-2026-09-02.md`. Spec for the
 | Table | Key columns |
 |---|---|
 | tournaments | id, name, date, location, tournament_city, tournament_state, officials_per_game, pay_per_game, sport, min_rank_level, show_co_officials, is_taxable, scheduling_mode, signup_code, blocks_reviewed, layout_locked, layout_locked_at, invitations_sent_at, courts (**never written**), start_date, end_date, block_size_mode, game_duration_minutes, cancelled_at, cancelled_reason, archived_at, self_schedule_deadline, status *(**no `admin_unlocked`** — that column is on `available_blocks`; corrected Sept 2, 2026)* |
+| **org_members** | **org_id, user_id, role, created_at** — PK `(org_id, user_id)`; FKs to `organizations` and `auth.users`, both CASCADE. **The authoritative user→org link (added Sept 2, 2026).** `loadOrgAndShow()` resolves the current org through this table. Never resolve an org by selecting an arbitrary `organizations` row. |
 | officials | id, org_id, name, email, phone, home_city, home_state, travel_radius |
 | available_blocks | id, tournament_id, block_name, court_first, status, held_by, held_until, officials_needed, game_ids, game_count, pattern, total_pay, start_time, end_time |
 | claims | id, tournament_id, block_id, official_id, official_name, official_email, official_phone, status, claimed_at |
@@ -360,8 +369,11 @@ Full audit written to `docs/specs/schema-code-audit-2026-09-02.md`. Spec for the
 | assigner_scratches | id, org_id, official_id, reason, created_at — active: per-org "exclude this official" list (roster scratch feature); 0 rows is normal until someone scratches an official |
 | tournament_days, official_blocks, schedules | legacy — from the removed Scheduler/Master Schedule/Individual Schedules tabs (nav cleanup, April 11 session); no longer written to by index.html, still referenced only as CASCADE-delete targets in `deleteTournament()`; 0 rows |
 
+### Functions
+- **`current_org_ids()`** — `STABLE SECURITY DEFINER`, returns the calling user's org ids from `org_members`. Built for the Phase 4 RLS policies so a policy on any table can scope by org without granting that table's reader a direct read on `org_members`. Execute granted to `authenticated` only.
+
 ### Views
-- **v_1099_report** — aggregates confirmed payments by official for tax year reporting
+- **v_1099_report** — aggregates confirmed claims by official for tax-year reporting. Depends on `claims` → `available_blocks` (via `block_id`) → `tournaments`; pay and game counts are **computed**, never read from `claims.pay_amount` (which nothing writes). Rewritten Sept 2, 2026 — see section 3.
 
 ### Travel radius values
 - `local` = same city only
@@ -395,7 +407,7 @@ All reports live in the **Reports** tab (`index.html` → `#tab-reports`). Each 
 
 **Purpose:** Tax compliance. Identifies officials who earned enough to require a 1099-NEC filing.
 
-**Data source:** `v_1099_report` Supabase view → aggregates confirmed payments by official per tax year.
+**Data source:** `v_1099_report` Supabase view → aggregates confirmed claims by official per tax year. **Rewritten Sept 2, 2026:** pay is computed as `sum(available_blocks.game_count × tournaments.pay_per_game)`, joining `available_blocks` on `claims.block_id`. It previously summed `claims.pay_amount` — a column nothing ever writes — and filtered on `pay_amount > 0`, so the report could never return a row. It also aliased `count(c.id)` as `total_games`, which counted blocks rather than games.
 
 **Filters:** `org_id` + `tax_year` (dropdown: current year back 5 years)
 
@@ -498,7 +510,7 @@ Sorted by estimated pay descending.
 - **Email**: Resend (domain: thetimmonsfoundation.org)
 - **SMS**: Twilio — blocked by A2P 10DLC, upgrade needed
 - **Repo**: github.com/mtimmons1227/stripeup
-- **Live URL**: https://officials-scheduler.netlify.app
+- **Live URL**: https://stripeup.netlify.app *(renamed from `officials-scheduler` on Sept 2, 2026 — the old subdomain is released and no longer resolves. `BASE_URL` is set in Netlify env vars for all four contexts, so invite links do not depend on the code fallback.)*
 
 ### Key files
 - `index.html` — assigner dashboard (tournaments, officials, scheduler, reports)
@@ -560,7 +572,7 @@ On Sept 2, 2026, `list_tables` (and the dashboard's row estimate) reported 0 row
   - Official policies test `auth.uid()`, but `self-schedule.html` is token-based with no Supabase session — always NULL. Self-schedule goes dark. The token-based fallbacks test `auth.jwt() ->> 'token'`, which has the same missing-claim problem.
   - `officials.id` has no relationship to `auth.users.id` — verified join returns **0 of 88 matching**. `officials_manage_self` and `officials_manage_own_claims` have never been capable of matching a row.
   - Only 6 of 12 tables get RLS enabled; `organizations`, `assigner_scratches`, `tournament_days`, `official_blocks`, `schedules` stay open.
-  - **Root cause is architectural, not textual:** the file assumes a JWT-claims tenancy model the app doesn't implement, and the schema has no user→org link to key correct policies off (see section 7). Fix tenancy first, then rewrite policies using a `SECURITY DEFINER` function that resolves org from `auth.uid()`. The officials/token half should move server-side into the Netlify functions using the service key — there is no sound way to prove "I hold a valid token" at the RLS layer from the browser.
+  - **Root cause is architectural, not textual:** the file assumes a JWT-claims tenancy model the app doesn't implement. **The missing user→org link is now fixed** (Sept 2, 2026 — `org_members` + `current_org_ids()`), so correct policies are finally writable: scope assigner access with `org_id in (select current_org_ids())` rather than `auth.jwt() ->> 'org_id'`, which will never be populated. The officials/token half should move server-side into the Netlify functions using the service key — there is no sound way to prove "I hold a valid token" at the RLS layer from the browser.
 - **Payment system (Stripe)** — Phase 3, not started
 - **Official-facing 1099** — officials see their own YTD earnings summary
 - **Court-level rank override** — per-court minimum rank settings

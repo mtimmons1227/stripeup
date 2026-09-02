@@ -6,15 +6,23 @@ This file is the single source of truth. Read it first. Update it last.
 
 ## 1. Current Status
 
+**As of September 2, 2026 (evening — DATA RESET)** — The database was deliberately cleared to a clean slate for the end-to-end self-schedule test. `DELETE FROM tournaments` removed both PSA Summer Jam tournaments and, by CASCADE, all 107 games, 43 blocks, 4 claims and 8 invite tokens. **`officials` (88 rows) and the Timmons Foundation org were kept.** The second org "Game Time Sports" and its auth user were deleted (see the tenancy bug in section 7). **The backup has since been dropped on request — the 164 deleted rows are gone permanently.** The only remaining trace is `backups/stripeup-pre-wipe-snapshot-2026-09-02.json` (tournaments, claims and invite tokens only — no games or blocks). This is fine by design: the deleted data was stale June test data and the fixture is being rebuilt from CSV. **There is now nothing to test against** — the flow must be rebuilt from CSV before any browser test; see section 2.
+
 **As of September 2, 2026** — Header now has a unified account/profile menu (gold avatar + org name trigger with caret; dropdown shows org name, email, then Change Password/Sign Out) replacing the old standalone header buttons. This update also closes a ~3-month documentation gap: an Aug 7 repo/docs reorganization and the Sept 1 account-menu work had never been logged here (see section 3). Three standing doc errors were also fixed: the repo URL in section 10, the RLS status in section 12/6 (policies are **written**, not applied — all 12 public tables confirmed RLS-off), and the Database Schema table in section 8 (4 tables existed but weren't listed). A data scare was also chased down and closed: the live Supabase project's cached row-count stats (`list_tables` / dashboard estimates) showed 0 rows almost everywhere, which looked like a wipe — a direct `COUNT(*)` against the correct, active project (`mqbxqtsnfzcmmzpbrxnx`) shows the data is actually intact (88 officials, 2 tournaments, 107 games). See the "Critical" note in section 10 — don't trust cached row counts on this project again without verifying with a real query.
 
 **As of June 7, 2026** — CSV game import now filters rows by tournament date, so a multi-day CSV file will only load the games matching the specific tournament's date. A combined 2-day PSA Summer Jam schedule CSV (July 4-5, 2026, 5 courts, 11 slots/day) has been generated in game-exports/. GitHub repo migrated to mtimmons1227/stripeup; Netlify reconnected. DNS issue with AT&T ISP resolved via Google Public DNS in Chrome/Edge. Signup auth bug fixed (was routing through proxy instead of Supabase JS client directly).
 
-The next milestone is a full browser test of the self-schedule flow from invite link to confirmed games — the existing 2 tournaments / 107 games / 88 officials are real and available to test against (counts drifted slightly from the 3 tournaments / 110 games documented below, likely from later cleanup — not investigated further). Travel radius UI fields for the Officials roster table remain queued behind that.
+The next milestone is a full browser test of the self-schedule flow from invite link to confirmed games. Note the paragraph above supersedes this: as of the Sept 2 evening reset the tournaments/games/blocks/claims are **gone by design** and must be rebuilt from a CSV first. The 88 officials remain. Travel radius UI fields for the Officials roster table remain queued behind that.
 
 ---
 
 ## 2. Next Test Plan
+
+**Step 0 — rebuild the fixture (required after the Sept 2 data reset).** Create a *single-day* tournament (not multi-day — series grouping, date filtering and the rollup are extra variables the token-path test doesn't need), then import `game-exports/karlos-tounament-saturday.csv` (1.4KB, one day) rather than the 110-game two-day file. Then Review Blocks → Confirm & Send Invitations.
+
+**Constraint to plan around:** `send-invites.js` filters test-pattern emails, so of the 88 officials only 4 can actually receive an invite and all 4 are Marvin's own addresses. At `officials_per_game = 2` that genuinely staffs about two blocks. Beyond that the test relies on Demo Mode / Simulate Responses, which exercises the DB writes but **not** the email path or the real token link — be precise about which is being claimed as working.
+
+**Also note:** `self-schedule.html` enforces a minimum of 2 blocks plus rest-period rules, so a single-block test fails by design. And `v_1099_report` aggregates confirmed claims — with claims at 0, all four Reports tab sections return empty until the rebuild produces confirmed claims.
 
 1. **Full self-schedule flow** — invite → official opens link → picks blocks → confirms → assigner sees in View Responses / Confirmed Officials modal
 2. **Confirmed Officials modal** — verify court grouping, empty slot rows, game count per block
@@ -25,6 +33,28 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 ---
 
 ## 3. Recent Changes Log
+
+### September 2, 2026 (night — schema/code audit + fixes)
+Full audit written to `docs/specs/schema-code-audit-2026-09-02.md`. Spec for the platform-wide officials model written to `docs/specs/platform-wide-officials-spec.md`. Findings and fixes:
+- **🔴 C1 — the 1099 report has never been able to return a row.** `v_1099_report` filters on `c.pay_amount > 0`, but **`claims.pay_amount` is never written** — zero occurrences of the string in `index.html` or `self-schedule.html`; both claim-insert paths (`self-schedule.html:995`, `index.html:5873`) omit it, and all four pre-wipe claims carried `0`. The tax-compliance report is structurally empty and an empty table reads as "nobody hit $600". **NOT YET FIXED** — needs a decision: write `pay_amount` at claim time, or (recommended) change the view to compute pay by joining `available_blocks.game_count × tournaments.pay_per_game`, which removes the denormalized column rather than populating it.
+- **C2 — scratching an official silently did nothing. FIXED.** `index.html:5458` sent a `notify_official` field; `assigner_scratches` has no such column, so PostgREST rejected the entire insert with a 400 while `.then()` never checked `r.ok` and reported success. The scratched official stayed fully eligible and would be re-invited. Removed the field and added an `r.ok` check that surfaces the error.
+- **C3 — `availability.official_id` is never populated.** Read at `3364, 5093, 6217`; written by no insert path. Always null, so the scheduler substitutes synthetic IDs (`'O001'`) and the link back to the real `officials` row is permanently broken. **NOT YET FIXED** — folded into spec Phase 1, since the commitment ledger keys on `official_id`.
+- **H1 — block re-save corrupted slots and pay. FIXED.** `brSaveBlocksDB` omitted `officials_needed` and computed `total_pay` without the `× officials_per_game` factor that `calculateBlocks` applies. Blocks created by CSV import were correct; the same blocks re-saved from Review Blocks came back with `officials_needed = NULL` and half the pay. Compounding it, read sites disagreed on the fallback — `|| 1` at 1725/1818/3150/3165/3216 but `|| 0` at 2025/2030/4363 — so after a re-save the dashboard counted those blocks as zero slots and zero dollars while the block grid counted one. Added `officials_needed`, multiplied `total_pay` by `opg`, and normalized the three `|| 0` sites to `|| 1`.
+- **H2 — roster showed wrong travel radius. FIXED.** `selectCols` (`4594`) omitted `travel_radius` and `rank_notes`, so `4732` rendered `o.travel_radius || 'national'` as "national" for every official while `send-invites.js` filtered on the real stored value — roster and invite logic disagreed. Rank notes were also always blank on reopen. Added `rank_notes, travel_radius, home_city, home_state`.
+- **H3 — `tournaments.courts` is never written** by any insert or update, but is rendered unguarded at `index.html:2108` and, on the official-facing page, `self-schedule.html:453` and `472` as `T.courts + ' courts'`. Officials see "null courts". **NOT YET FIXED.**
+- **S1 — 19 foreign keys had no covering index. FIXED.** Migration `add_missing_foreign_key_indexes` created all 19 (confirmed independently by Supabase's performance advisor). Note `claims.tournament_id` and `claims.official_id` were already indexed — it was 19 FK columns lacking indexes, not every FK in the schema.
+- **S5 — corrected three comments that contradicted the live schema**: `1668` ("games table has no org_id column" — false), `4593` ("rank_level may not be there yet" — it exists), `4606` ("assigner_scratches may not exist yet" — it exists). `self-schedule.html:561` ("tournament_day_id doesn't exist on available_blocks" — false) is **NOT YET FIXED**.
+- **Docs** — section 8 previously listed `admin_unlocked` under `tournaments`; it is a column on `available_blocks`. Corrected below. The code was always right.
+- **Verification** — all inline `<script>` blocks extracted and passed `node --check` after the edits, per the QA gate in `.claude/agents/qa.md`.
+
+### September 2, 2026 (evening — data reset + tenancy findings)
+- **DB** — Cleared to a clean slate for end-to-end testing: `DELETE FROM tournaments` (2 rows) cascaded to `games` (107), `available_blocks` (43), `claims` (4), `invite_tokens` (8), plus `availability`/`official_blocks`/`schedules`/`tournament_days` (already 0). `officials` (88) and the Timmons Foundation org intentionally retained. Post-delete counts verified.
+- **DB** — Backup taken before the delete (schema `backup_20260902`, exact copies of all 11 tables, 254 rows total: the 164 deleted plus officials and organizations), then **dropped later the same evening on request** — `DROP SCHEMA backup_20260902 CASCADE`, verified no `backup%` schema remains. **The 164 deleted rows are therefore unrecoverable from the database.** Deliberate: the data was stale June test state and the fixture is being rebuilt from CSV.
+- **Files** — `backups/stripeup-pre-wipe-snapshot-2026-09-02.json` still exists on disk and is the only surviving record of the deleted tournaments/claims/invite_tokens (it never contained games or blocks). It holds official emails, a phone number and live invite-token strings, and `.gitignore` does **not** cover `backups/` — add that line before the next `git add .`, or delete the file.
+- **DB** — Deleted the second org "Game Time Sports" (`5ed3d3a2-…`, created Sept 2, no data) **and** its auth user `game_time_sports@yahoo.com`, together. Deleting the org alone would have been worse than leaving it: that account's next login would hit the hardcoded fallback at index.html:1590 and create a *second* "Timmons Foundation" row, making the `LIMIT 1` org lookup a coin flip.
+- **Finding (index.html:1573, 1468)** — **Cross-tenant data exposure.** `loadOrgAndShow()` resolves the current org with `/rest/v1/organizations?select=id,name&limit=1` — no filter by user — and `doSignup()` creates the auth user and the org as two unrelated inserts with no link between them. `organizations` has no `owner_id`/`user_id` and there is no membership table, so **the schema has no user→org relationship at all**. While Game Time Sports existed, that query returned Timmons Foundation for *both* accounts. Now dormant (one org, one user), not fixed. Logged in section 7.
+- **Finding (`rls-policies.sql`)** — Cannot be applied as-is; verified against the live DB. (a) Every assigner policy tests `auth.jwt() ->> 'org_id'`, but both auth users' `raw_app_meta_data` is just `{provider, providers}` — no custom claim, no auth hook — so the claim is NULL and every assigner policy evaluates false (lockout). (b) Official policies test `auth.uid()`, but self-schedule is token-based with no Supabase session. (c) `officials.id` has no relationship to `auth.users.id` — a join returned **0 of 88 matching** — so `officials_manage_self` / `officials_manage_own_claims` could never have worked. (d) The file only enables RLS on 6 of 12 tables. Root cause is (a)+the missing tenancy link, not the policy text. Details in section 12.
+- **Docs** — Corrected the org ID in section 11 (was `996a40a8-…`, actual is `2270e1d1-…`) and the CASCADE DELETE note in section 8 (`games` *does* have `org_id`; so do `available_blocks` and `availability` — only `claims` lacks it).
 
 ### September 2, 2026 (documentation audit)
 - **CLAUDE.md** — Closed a ~3-month gap: the Aug 7 and Sept 1 entries below existed in git history but were never logged, in violation of section 13's own auto-update rule. Fixed repo URL in section 10 (was `gridironiq/stripeup`, actual remote is `mtimmons1227/stripeup` — section 1 already recorded the migration but section 10 was never updated). Fixed RLS status in sections 6 and 12 (was framed as "not yet built"; corrected to "written April 2026, never applied" — `rls-policies.sql` and `RLS-README.md` have existed since April). Added 4 missing tables to the section 8 schema table (`assigner_scratches`, `tournament_days`, `official_blocks`, `schedules`).
@@ -302,10 +332,16 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 
 ## 7. Known Issues ❌
 
+- **🔴 The 1099 report cannot return a row (C1).** `v_1099_report` requires `claims.pay_amount > 0`; nothing ever writes `pay_amount`. Tax compliance is non-functional and fails silently as "nobody earned $600". Decision needed: populate the column at claim time, or rewrite the view to compute pay from `available_blocks.game_count × tournaments.pay_per_game` (recommended — one less denormalized copy).
+- **`availability.official_id` is never written (C3).** Always null; the scheduler falls back to synthetic IDs and the link to the real official is lost. Blocks the commitment ledger in the spec.
+- **`tournaments.courts` is never written (H3)** but is rendered unguarded — officials see "null courts" on the self-schedule banner (`self-schedule.html:453, 472`).
+- **`self-schedule.html:561`** carries a comment claiming `tournament_day_id` doesn't exist on `available_blocks`. It does.
 - DEV bar still visible in production (should be hidden)
 - SMS blocked — Twilio A2P 10DLC upgrade required
 - **Stray duplicate `send-invites.js`** at repo root (added Aug 7, 2026) diverges from the deployed `netlify/functions/send-invites.js` (extra CORS headers + env-var validation) and is not wired up anywhere — `netlify.toml` points `[functions] directory` at `netlify/functions/` only. Dead file; should be deleted or reconciled to avoid someone editing the wrong copy.
 - RLS disabled on all 12 public tables (`officials`, `claims`, `invite_tokens` included) — anon key has full read/write. See section 12.
+- **🔴 No user→org relationship exists in the schema.** `organizations` has no `owner_id`/`user_id` and there is no membership table. `loadOrgAndShow()` (index.html:1573) picks the org with `organizations?select=id,name&limit=1` — whichever row comes back first — and `doSignup()` (index.html:1468) creates the auth user and org as unrelated inserts. With more than one org in the table, every account loads the same first org: while "Game Time Sports" existed (Sept 2), that account would have loaded Timmons Foundation's 88 officials, tournaments and 1099 data. Currently dormant only because there is one org and one user again. **RLS will not fix this** — the client is asking for the wrong org, and policies keyed to the org the client already chose would authorize the leak. Fix order: add `org_members(user_id, org_id, role)` → backfill → resolve org through it in `loadOrgAndShow()` and write the membership row in `doSignup()` → *then* write RLS policies keyed off `auth.uid()` via a `SECURITY DEFINER` lookup.
+- **Hardcoded org fallback** (index.html:1590) — if the org lookup returns nothing, the app creates an org literally named "Timmons Foundation" with slug `timmons`, regardless of who is signed in. Any orphaned account triggers this.
 
 ---
 
@@ -314,7 +350,7 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 ### Tables
 | Table | Key columns |
 |---|---|
-| tournaments | id, name, date, location, tournament_city, tournament_state, officials_per_game, pay_per_game, sport, min_rank_level, show_co_officials, is_taxable, scheduling_mode, signup_code, blocks_reviewed, layout_locked, invitations_sent_at, admin_unlocked |
+| tournaments | id, name, date, location, tournament_city, tournament_state, officials_per_game, pay_per_game, sport, min_rank_level, show_co_officials, is_taxable, scheduling_mode, signup_code, blocks_reviewed, layout_locked, layout_locked_at, invitations_sent_at, courts (**never written**), start_date, end_date, block_size_mode, game_duration_minutes, cancelled_at, cancelled_reason, archived_at, self_schedule_deadline, status *(**no `admin_unlocked`** — that column is on `available_blocks`; corrected Sept 2, 2026)* |
 | officials | id, org_id, name, email, phone, home_city, home_state, travel_radius |
 | available_blocks | id, tournament_id, block_name, court_first, status, held_by, held_until, officials_needed, game_ids, game_count, pattern, total_pay, start_time, end_time |
 | claims | id, tournament_id, block_id, official_id, official_name, official_email, official_phone, status, claimed_at |
@@ -334,7 +370,15 @@ The next milestone is a full browser test of the self-schedule flow from invite 
 - Filter applied in netlify/functions/send-invites.js
 
 ### CASCADE DELETE
-All child tables cascade on tournament delete (confirmed April 2026). No org_id column on `games` or `claims` — always filter by `tournament_id IN (org's tournament IDs)`.
+All child tables cascade on tournament delete (confirmed April 2026; re-verified Sept 2, 2026 via `information_schema` — `availability`, `available_blocks`, `claims`, `games`, `invite_tokens`, `official_blocks`, `schedules`, `tournament_days` are all `ON DELETE CASCADE` from `tournaments`).
+
+**Correction (Sept 2, 2026):** the long-standing note "no org_id column on `games` or `claims`" was half wrong. `games` **does** have `org_id` — as do `available_blocks` and `availability`. Only **`claims`** lacks it. Filter `claims` by `tournament_id IN (org's tournament IDs)`; the others can be filtered on `org_id` directly.
+
+**Ownership model (confirmed Sept 2, 2026):** games belong to a tournament, and a tournament belongs to an org — `games.tournament_id → tournaments.org_id` is the authoritative path, and it is the one the app actually uses (every games read filters on `tournament_id`; the `org_id` column on `games` is written by `saveGamesToDB` at index.html:5286 and never read — the comment at index.html:1668 even claims the column doesn't exist). The stray `org_id` on `games`, `available_blocks`, `availability` (and legacy `official_blocks`, `schedules`, `tournament_days`) is redundant denormalization: a second source of truth that can silently disagree with the tournament once more than one org exists, because `saveGamesToDB` stamps it from `G.orgId`, which comes from the `LIMIT 1` lookup (section 7). Checked against the pre-wipe data: 107 games and 43 blocks, 0 mismatched, 0 null — but only because there had only ever been one org.
+
+**Rule going forward:** org-scoped entities (`officials`, `assigner_scratches`) carry `org_id`; tournament-scoped entities (`games`, `available_blocks`, `claims`, `invite_tokens`, `availability`) are scoped through `tournament_id` only. `claims` and `invite_tokens` already follow this. Proposed tidy-up: drop `org_id` from the tournament-scoped tables so the tournament is the only thing that says who owns a game.
+
+**`officials.org_id → organizations` is `NO ACTION`, not CASCADE.** An org row cannot be deleted while any official references it — which is why the Timmons Foundation org survives a data reset that keeps officials.
 
 ### Brand colors
 - Navy: #1B2A4A — Gold: #C9A84C — White: #FFFFFF — Red (full block): #EF4444
@@ -501,16 +545,22 @@ On Sept 2, 2026, `list_tables` (and the dashboard's row estimate) reported 0 row
 
 ### Org
 - Name: Timmons Foundation
-- Org ID: `996a40a8-eab7-4c03-9c25-a834296c99f6`
+- Org ID: `2270e1d1-a485-4176-9cd4-c7046c1772fa` *(corrected Sept 2, 2026 — the previously documented `996a40a8-…` does not exist; the current row was created 2026-06-07)*
+- This is the **only** org and Marvin is the **only** auth user as of the Sept 2 reset.
 
 ### Email filtering note
-84 of 87 officials have test-pattern emails (`test@*`, `test\d*@`) that are filtered out by `send-invites.js`. Only the 3 real officials above receive actual emails. The recipient count display now correctly reflects this (shows ~3 when all 3 are already confirmed, not 87).
+84 of the 88 officials have test-pattern emails (`test@*`, `test\d*@`) that are filtered out by `send-invites.js`; 4 do not. Only the real officials above receive actual emails, and all of them are Marvin's own addresses — so a "successful" invite send proves the send path, not multi-recipient behaviour. The recipient count display reflects the filtering.
 
 ---
 
 ## 12. Phase 2 Notes
 
-- **RLS policies** — written (`rls-policies.sql`, `RLS-README.md`, drafted April 2026) but never applied; confirmed via Supabase (Sept 2, 2026) that all 12 public tables still have RLS disabled, including `officials`, `claims`, and `invite_tokens` — fully exposed to the anon key. Schema has drifted since April (`invite_tokens.status`/`declined_at`, tournaments layout-lock fields didn't exist yet) — review `rls-policies.sql` against the current schema before applying, then enable prior to public launch.
+- **RLS policies** — written (`rls-policies.sql`, `RLS-README.md`, drafted April 2026) but never applied; all 12 public tables still have RLS disabled, fully exposed to the anon key. **Reviewed Sept 2, 2026 against the live DB — do NOT apply as-is; it would be a same-day outage, not a hardening step:**
+  - Every assigner policy tests `auth.jwt() ->> 'org_id'`. Neither auth user has that claim (`raw_app_meta_data` is just `{provider, providers}`) and there is no auth hook to inject one, so the condition is NULL → false for every assigner. Result: locked out of your own tournaments and officials.
+  - Official policies test `auth.uid()`, but `self-schedule.html` is token-based with no Supabase session — always NULL. Self-schedule goes dark. The token-based fallbacks test `auth.jwt() ->> 'token'`, which has the same missing-claim problem.
+  - `officials.id` has no relationship to `auth.users.id` — verified join returns **0 of 88 matching**. `officials_manage_self` and `officials_manage_own_claims` have never been capable of matching a row.
+  - Only 6 of 12 tables get RLS enabled; `organizations`, `assigner_scratches`, `tournament_days`, `official_blocks`, `schedules` stay open.
+  - **Root cause is architectural, not textual:** the file assumes a JWT-claims tenancy model the app doesn't implement, and the schema has no user→org link to key correct policies off (see section 7). Fix tenancy first, then rewrite policies using a `SECURITY DEFINER` function that resolves org from `auth.uid()`. The officials/token half should move server-side into the Netlify functions using the service key — there is no sound way to prove "I hold a valid token" at the RLS layer from the browser.
 - **Payment system (Stripe)** — Phase 3, not started
 - **Official-facing 1099** — officials see their own YTD earnings summary
 - **Court-level rank override** — per-court minimum rank settings

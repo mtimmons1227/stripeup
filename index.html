@@ -1665,7 +1665,8 @@ function updateNavCounts() {
   // Use in-memory tournament list to scope games/claims to this org's active tournaments
   var tournIds = (G.allTournaments || G.tournaments || []).map(function(t){return t.id;});
 
-  // Games count &mdash; scoped to org's tournaments (games table has no org_id column)
+  // Games count &mdash; scoped via tournament_id. NOTE: games.org_id DOES exist but is
+  // write-only (see saveGamesToDB); ownership is games -> tournament -> org.
   var gEl = document.getElementById('gpill-count');
   if (!tournIds.length) {
     if (gEl) gEl.textContent = 0;
@@ -2022,12 +2023,12 @@ function loadSeriesRollup(seriesKey, tournIds, payMap) {
     claims.forEach(function(c) { officialSet[c.official_id] = 1; });
     var confirmedOfficials = Object.keys(officialSet).length;
 
-    var totalSlots = blocks.reduce(function(s, b) { return s + (parseInt(b.officials_needed) || 0); }, 0);
+    var totalSlots = blocks.reduce(function(s, b) { return s + (parseInt(b.officials_needed) || 1); }, 0);
     var filledSlots = claims.length;
     var pct = totalSlots > 0 ? Math.round(filledSlots / totalSlots * 100) : 0;
 
     var payEst = blocks.reduce(function(s, b) {
-      return s + (parseInt(b.officials_needed) || 0) * (parseInt(b.game_count) || 0) * (payMap[b.tournament_id] || 0);
+      return s + (parseInt(b.officials_needed) || 1) * (parseInt(b.game_count) || 0) * (payMap[b.tournament_id] || 0);
     }, 0);
 
     var dot = '<span style="color:#3A4A6A;margin:0 3px">&middot;</span>';
@@ -2859,6 +2860,7 @@ function brSaveBlocksDB(andOpen){
   var tid=BRK.tid;if(!tid)return;
   var t=(G.allTournaments||[]).find(function(x){return x.id===tid;});
   var pay=t?(parseFloat(t.pay_per_game)||0):0;
+  var opg=t?(parseInt(t.officials_per_game)||1):1;
   var rows=[];
   BRK.blocks.forEach(function(cs){
     cs.blocks.forEach(function(blk){
@@ -2869,7 +2871,7 @@ function brSaveBlocksDB(andOpen){
         pattern:blk.game_ids.length===2?'W2':blk.game_ids.length===3?'W3':'W'+blk.game_ids.length,
         court_first:cs.court,court_second:cs.court,
         start_time:blk.start_time,end_time:blk.end_time,
-        sit_slots:JSON.stringify([]),total_pay:blk.game_ids.length*pay,
+        sit_slots:JSON.stringify([]),total_pay:blk.game_ids.length*pay*opg,officials_needed:opg,
         status:'open',is_custom:false
       });
     });
@@ -4360,7 +4362,7 @@ function runStaffingReport() {
         var blocks=res[0].data||[], claims=res[1].data||[];
         var tMap={};
         tourneys.forEach(function(t){ tMap[t.id]={name:t.name,date:t.date,slots:0,filled:0,games:0,officials:{}}; });
-        blocks.forEach(function(b){ if(tMap[b.tournament_id]){ tMap[b.tournament_id].slots+=parseInt(b.officials_needed)||0; tMap[b.tournament_id].games+=parseInt(b.game_count)||0; } });
+        blocks.forEach(function(b){ if(tMap[b.tournament_id]){ tMap[b.tournament_id].slots+=parseInt(b.officials_needed)||1; tMap[b.tournament_id].games+=parseInt(b.game_count)||0; } });
         claims.forEach(function(c){ if(tMap[c.tournament_id]){ tMap[c.tournament_id].filled++; tMap[c.tournament_id].officials[c.official_id]=true; } });
         var rows=tourneys.map(function(t){ var m=tMap[t.id]; m.pct=m.slots>0?Math.round(m.filled/m.slots*100):0; m.officialCount=Object.keys(m.officials).length; return m; });
         _rptData.staffing=rows; btn.textContent='Run Report'; btn.disabled=false; exportBtn.style.display='inline-block'; status.textContent=tourneys.length+' tournaments';
@@ -4590,8 +4592,9 @@ function loadRoster() {
   if (!G.orgId) return;
   document.getElementById('roster-table').innerHTML = '<div style="padding:16px;font-size:12px;color:#6B7A99;font-family:monospace">Loading officials...</div>';
   // Load ALL platform officials + this org scratch records in parallel
-  // Select only core columns that always exist   rank_level may not be there yet
-  var selectCols = 'id,name,email,phone,sport,sports,certification,three_person_certified,rank_level,rank_label,status,org_id,created_at,market';
+  // Column list verified against the live schema 2026-09-02. rank_notes and
+  // travel_radius were missing here, so the roster always rendered 'national'.
+  var selectCols = 'id,name,email,phone,sport,sports,certification,three_person_certified,rank_level,rank_label,rank_notes,status,org_id,created_at,market,travel_radius,home_city,home_state';
   var officialsUrl = G_POOL_VIEW === 'mine'
     ? '/rest/v1/officials?org_id=eq.' + G.orgId + '&order=name.asc&limit=1000&select=' + selectCols
     : '/rest/v1/officials?order=name.asc&limit=1000&select=' + selectCols;
@@ -4603,7 +4606,7 @@ function loadRoster() {
     }),
     sbFetch('/rest/v1/assigner_scratches?org_id=eq.' + G.orgId + '&select=official_id,reason,created_at', { method: 'GET' })
       .then(function(r){ return r.ok ? r.json() : []; })
-      .catch(function(){ return []; }) // assigner_scratches may not exist yet
+      .catch(function(){ return []; }) // assigner_scratches exists (verified 2026-09-02)
   ]).then(function(results) {
     var officials = Array.isArray(results[0]) ? results[0] : [];
     var scratches = Array.isArray(results[1]) ? results[1] : [];
@@ -5455,10 +5458,16 @@ function confirmScratch() {
         org_id: G.orgId,
         official_id: oid,
         reason: reason || null,
-        notify_official: notify,
         scratched_by: G.orgName || 'Admin'
       })
-    }).then(function() {
+    }).then(function(r) {
+      // assigner_scratches has no notify_official column; sending it made PostgREST
+      // reject the whole insert with a 400 while the UI reported success.
+      if (r && r.ok === false) {
+        return r.text().then(function(t) {
+          throw new Error('Scratch failed (' + r.status + '): ' + (t || 'request rejected'));
+        });
+      }
       btn.textContent = 'Scratch Official'; btn.disabled = false;
       closeModal('scratch-modal');
       loadRoster();

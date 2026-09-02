@@ -19,8 +19,8 @@ body{font-family:Arial,sans-serif;background:#F4F6F9;color:#1B2A4A;font-size:14p
 .acct-caret{font-size:10px;color:#8A9BB8}
 .acct-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);min-width:230px;padding:6px;z-index:210}
 .acct-dropdown.open{display:block}
-.acct-dd-email{font-size:13px;font-weight:700;color:#1B2A4A;padding:8px 10px 2px;word-break:break-all}
-.acct-dd-org{font-size:11px;color:#6B7A99;padding:0 10px 8px}
+.acct-dd-org{font-size:13px;font-weight:700;color:#1B2A4A;padding:8px 10px 2px;word-break:break-word}
+.acct-dd-email{font-size:11px;color:#6B7A99;padding:0 10px 8px;word-break:break-all}
 .acct-dd-divider{height:1px;background:#E4E9F1;margin:4px 0}
 .acct-dd-item{display:block;width:100%;text-align:left;background:none;border:none;padding:9px 10px;font-size:13px;color:#1B2A4A;cursor:pointer;border-radius:6px;font-family:inherit}
 .acct-dd-item:hover{background:#F4F6F9}
@@ -280,12 +280,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#C9A84C;backgr
       <div class="acct-menu" id="acct-menu" style="display:none">
         <button class="acct-trigger" id="acct-trigger" onclick="toggleAcctMenu(event)">
           <span class="acct-avatar" id="acct-avatar"></span>
-          <span class="acct-email" id="acct-email-label"></span>
+          <span class="acct-email" id="acct-trigger-label"></span>
           <span class="acct-caret">&#9662;</span>
         </button>
         <div class="acct-dropdown" id="acct-dropdown">
-          <div class="acct-dd-email" id="acct-dd-email"></div>
           <div class="acct-dd-org" id="acct-dd-org"></div>
+          <div class="acct-dd-email" id="acct-dd-email"></div>
           <div class="acct-dd-divider"></div>
           <button class="acct-dd-item" onclick="closeAcctMenu();openModal('chgpwd-modal')">Change Password</button>
           <button class="acct-dd-item" onclick="closeAcctMenu();doLogout()">Sign Out</button>
@@ -1496,19 +1496,21 @@ function renderAcctMenu() {
     if (!menu) return;
     if (!user) { menu.style.display = 'none'; return; }
     var email = user.email || '';
+    var orgName = G.orgName || '';
+    var triggerText = orgName || email;
     var avatar = document.getElementById('acct-avatar');
-    var label = document.getElementById('acct-email-label');
-    var ddEmail = document.getElementById('acct-dd-email');
+    var label = document.getElementById('acct-trigger-label');
     var ddOrg = document.getElementById('acct-dd-org');
-    if (!email) {
+    var ddEmail = document.getElementById('acct-dd-email');
+    if (!triggerText) {
       if (avatar) avatar.textContent = '';
       if (label) label.textContent = 'Account';
     } else {
-      if (avatar) avatar.textContent = email.charAt(0).toUpperCase();
-      if (label) label.textContent = email;
+      if (avatar) avatar.textContent = triggerText.charAt(0).toUpperCase();
+      if (label) label.textContent = triggerText;
     }
-    if (ddEmail) ddEmail.textContent = email || 'Account';
-    if (ddOrg) ddOrg.textContent = 'Org: ' + (G.orgName || '');
+    if (ddOrg) ddOrg.textContent = orgName || 'Account';
+    if (ddEmail) { ddEmail.textContent = email; ddEmail.style.display = email ? '' : 'none'; }
     menu.style.display = '';
   }).catch(function(e) {
     dm('Account menu error: ' + e.message);
